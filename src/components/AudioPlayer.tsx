@@ -408,24 +408,38 @@ export function AudioPlayer({
       ) : segments?.length && !question ? (
         <div
           ref={scrollBox}
-          onScroll={() => {
-            manualScrollUntil.current = Date.now() + 6000;
-          }}
+          onWheel={pauseAutoScroll}
+          onTouchStart={pauseAutoScroll}
+          onPointerDown={pauseAutoScroll}
           className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground"
         >
-          {segments.map((s, i) => (
-            <p
-              key={i}
-              ref={i === active ? activeLine : undefined}
-              onClick={() => startBook(i)}
-              className={cn(
-                "cursor-pointer rounded-md px-1.5 py-0.5 transition-colors",
-                i === active ? "bg-primary/10 text-foreground" : "hover:text-foreground",
-              )}
-            >
-              {s}
-            </p>
-          ))}
+          {paragraphs.map((group) => {
+            const isActive =
+              active !== null && active >= group.from && active <= group.to;
+            return (
+              <p
+                key={group.from}
+                ref={isActive ? activeLine : undefined}
+                className={cn(
+                  "rounded-md px-1.5 py-0.5 transition-colors",
+                  isActive ? "bg-primary/10" : "",
+                )}
+              >
+                {group.items.map(({ index, text: sentence }) => (
+                  <span
+                    key={index}
+                    onClick={() => startBook(index)}
+                    className={cn(
+                      "cursor-pointer transition-colors",
+                      index === active ? "text-foreground" : "hover:text-foreground",
+                    )}
+                  >
+                    {sentence}{" "}
+                  </span>
+                ))}
+              </p>
+            );
+          })}
         </div>
       ) : text ? (
         <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground">
