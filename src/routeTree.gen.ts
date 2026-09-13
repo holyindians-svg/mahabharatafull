@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KnihyIndexRouteImport } from './routes/knihy/index'
+import { Route as KnihySlugRouteImport } from './routes/knihy/$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const KnihyIndexRoute = KnihyIndexRouteImport.update({
   path: '/knihy/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KnihySlugRoute = KnihySlugRouteImport.update({
+  id: '/knihy/$slug',
+  path: '/knihy/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/knihy/$slug': typeof KnihySlugRoute
   '/knihy/': typeof KnihyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/knihy/$slug': typeof KnihySlugRoute
   '/knihy': typeof KnihyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/knihy/$slug': typeof KnihySlugRoute
   '/knihy/': typeof KnihyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/knihy/'
+  fullPaths: '/' | '/knihy/$slug' | '/knihy/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/knihy'
-  id: '__root__' | '/' | '/knihy/'
+  to: '/' | '/knihy/$slug' | '/knihy'
+  id: '__root__' | '/' | '/knihy/$slug' | '/knihy/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  KnihySlugRoute: typeof KnihySlugRoute
   KnihyIndexRoute: typeof KnihyIndexRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KnihyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/knihy/$slug': {
+      id: '/knihy/$slug'
+      path: '/knihy/$slug'
+      fullPath: '/knihy/$slug'
+      preLoaderRoute: typeof KnihySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  KnihySlugRoute: KnihySlugRoute,
   KnihyIndexRoute: KnihyIndexRoute,
 }
 export const routeTree = rootRouteImport
