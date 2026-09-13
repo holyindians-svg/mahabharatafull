@@ -16,6 +16,38 @@ function toSentences(paragraph: string): string[] {
     .filter((s) => /\p{L}/u.test(s));
 }
 
+/**
+ * Zachová nadpisy a dlouhé zdrojové bloky rozdělí pouze mezi větami.
+ * Výsledné odstavce mají přibližně do 120 slov, aby se při čtení
+ * posouvaly klidně a zůstaly přehledné i na telefonu.
+ */
+function toReadableParagraphs(paragraphs: string[], maxWords = 120): string[] {
+  const result: string[] = [];
+  for (const paragraph of paragraphs) {
+    const clean = paragraph.trim();
+    if (!clean) continue;
+    if (/^(oddíl|section)\s+[ivxlcdm0-9]+$/iu.test(clean)) {
+      result.push(clean);
+      continue;
+    }
+    const sentences = toSentences(clean);
+    let current: string[] = [];
+    let count = 0;
+    for (const sentence of sentences) {
+      const sentenceWords = sentence.match(/\S+/g)?.length ?? 0;
+      if (current.length && count + sentenceWords > maxWords) {
+        result.push(current.join(" "));
+        current = [];
+        count = 0;
+      }
+      current.push(sentence);
+      count += sentenceWords;
+    }
+    if (current.length) result.push(current.join(" "));
+  }
+  return result;
+}
+
 
 /** Náhradní text, dokud se úplné znění nenačte. */
 export function adiParvaFallbackSegments(): string[] {
@@ -40,7 +72,9 @@ export interface AdiParvaText {
 
 /** Náhradní obsah, dokud se úplné znění nenačte. */
 export function adiParvaFallback(): AdiParvaText {
-  const paragraphs = (narrationFor("parva", "adi-parva") ?? "").split(/\n{2,}/);
+  const paragraphs = toReadableParagraphs(
+    (narrationFor("parva", "adi-parva") ?? "").split(/\n{2,}/),
+  );
   return {
     segments: paragraphs.flatMap(toSentences),
     paragraphIndex: paragraphIndexFor(paragraphs),
@@ -56,8 +90,9 @@ export async function loadAdiParvaSegments(): Promise<AdiParvaText> {
     const res = await fetch("/texty/adi-parva.json");
     if (!res.ok) throw new Error("nedostupné");
     const data = (await res.json()) as { paragraphs?: string[] };
-    const paragraphs = data.paragraphs ?? [];
-    if (!paragraphs.length) throw new Error("prázdné");
+    const sourceParagraphs = data.paragraphs ?? [];
+    if (!sourceParagraphs.length) throw new Error("prázdné");
+    const paragraphs = toReadableParagraphs(sourceParagraphs);
     cache = {
       segments: paragraphs.flatMap(toSentences),
       paragraphIndex: paragraphIndexFor(paragraphs),

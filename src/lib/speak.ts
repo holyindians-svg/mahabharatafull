@@ -13,6 +13,139 @@ export interface SpeakHandle {
   done: Promise<void>;
 }
 
+export interface WordBoundary {
+  segmentIndex: number;
+  charIndex: number;
+}
+
+interface PreciseBookOptions {
+  rate?: number;
+  muted?: boolean;
+  startSegment?: number;
+  startChar?: number;
+  onWord?: (boundary: WordBoundary) => void;
+  onSegment?: (index: number) => void;
+}
+
+/**
+ * Čte knihu hlasem zařízení. Prohlížeč oznamuje skutečný začátek každého
+ * vysloveného slova, takže zvýraznění není odhadované z délky textu.
+ */
+export function speakBookPrecisely(
+  segments: string[],
+  options: PreciseBookOptions = {},
+): SpeakHandle | null {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+
+  const synth = window.speechSynthesis;
+  let segmentIndex = Math.max(0, Math.min(options.startSegment ?? 0, segments.length - 1));
+  let charIndex = Math.max(0, options.startChar ?? 0);
+  let rate = options.rate ?? 1;
+  let muted = options.muted ?? false;
+  let stopped = false;
+  let generation = 0;
+  let startedAt = performance.now();
+  let elapsedBeforeRestart = 0;
+  let resolveDone: () => void = () => {};
+  const done = new Promise<void>((resolve) => {
+    resolveDone = resolve;
+  });
+
+  const chooseCzechVoice = () =>
+    synth.getVoices().find((voice) => /^cs(?:-|_)/i.test(voice.lang));
+
+  const finish = () => {
+    if (stopped) return;
+    stopped = true;
+    resolveDone();
+  };
+
+  const speakCurrent = () => {
+    if (stopped || segmentIndex >= segments.length) {
+      finish();
+      return;
+    }
+    const whole = segments[segmentIndex] ?? "";
+    const from = Math.max(0, Math.min(charIndex, whole.length));
+    const spoken = whole.slice(from).trimStart();
+    const trimOffset = whole.slice(from).length - spoken.length;
+    charIndex = from + trimOffset;
+    if (!spoken) {
+      segmentIndex += 1;
+      charIndex = 0;
+      speakCurrent();
+      return;
+    }
+
+    const ownGeneration = ++generation;
+    const utterance = new SpeechSynthesisUtterance(spoken);
+    utterance.lang = "cs-CZ";
+    utterance.rate = rate;
+    utterance.volume = muted ? 0 : 1;
+    const voice = chooseCzechVoice();
+    if (voice) utterance.voice = voice;
+    options.onSegment?.(segmentIndex);
+    utterance.onboundary = (event) => {
+      if (stopped || ownGeneration !== generation) return;
+      if (event.name && event.name !== "word") return;
+      charIndex = from + trimOffset + event.charIndex;
+      options.onWord?.({ segmentIndex, charIndex });
+    };
+    utterance.onend = () => {
+      if (stopped || ownGeneration !== generation) return;
+      segmentIndex += 1;
+      charIndex = 0;
+      speakCurrent();
+    };
+    utterance.onerror = (event) => {
+      if (stopped || ownGeneration !== generation || event.error === "canceled") return;
+      finish();
+    };
+    synth.speak(utterance);
+  };
+
+  const restart = () => {
+    if (stopped) return;
+    elapsedBeforeRestart += (performance.now() - startedAt) / 1000;
+    startedAt = performance.now();
+    generation += 1;
+    synth.cancel();
+    speakCurrent();
+  };
+
+  synth.cancel();
+  speakCurrent();
+
+  return {
+    stop: () => {
+      if (stopped) return;
+      stopped = true;
+      generation += 1;
+      synth.cancel();
+      resolveDone();
+    },
+    setRate: (next) => {
+      if (rate === next) return;
+      rate = next;
+      restart();
+    },
+    setMuted: (next) => {
+      if (muted === next) return;
+      muted = next;
+      restart();
+    },
+    scheduledSeconds: () => {
+      const remainingWords = segments
+        .slice(segmentIndex)
+        .join(" ")
+        .match(/\S+/g)?.length ?? 0;
+      return elapsedBeforeRestart + remainingWords / (2.4 * rate);
+    },
+    elapsedSeconds: () => elapsedBeforeRestart + (performance.now() - startedAt) / 1000,
+    done,
+  };
+}
+
 /**
  * Připraví text pro předčítání: vypustí sanskrtské glosy v závorkách,
  * značky formátování a uvozovky, které hlas jinak vyslovuje jako šum.
