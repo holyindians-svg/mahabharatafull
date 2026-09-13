@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Scroll } from "lucide-react";
 import { getParva, parvas } from "@/data/parvas";
@@ -5,8 +6,10 @@ import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { narrationFor } from "@/data/narrations";
+import { adiParvaFallbackSegments, loadAdiParvaSegments } from "@/data/adi-parva-text";
 
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
+
 
 export const Route = createFileRoute("/knihy/$slug")({
   loader: ({ params }) => {
@@ -36,6 +39,23 @@ function BookDetail() {
   const { parva } = Route.useLoaderData();
   const people = parva.characterSlugs.map(getCharacter).filter(Boolean);
   const next = parvas[parva.order % parvas.length]!;
+  const hasFullText = parva.slug === "adi-parva";
+  const [segments, setSegments] = useState<string[] | undefined>(
+    hasFullText ? adiParvaFallbackSegments() : undefined,
+  );
+
+  useEffect(() => {
+    if (!hasFullText) return;
+    let alive = true;
+    void loadAdiParvaSegments().then((s) => {
+      if (alive) setSegments(s);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [hasFullText]);
+
+
 
   return (
     <div>
@@ -86,6 +106,8 @@ function BookDetail() {
               minutes={parva.audioMinutes}
               context={`Kniha: ${parva.order}. ${parva.name} (${parva.sanskrit}) — ${parva.subtitle}`}
               presetText={narrationFor("parva", parva.slug)}
+              segments={segments}
+
             />
 
             <div className="rounded-xl border border-border bg-surface/70 p-5">
