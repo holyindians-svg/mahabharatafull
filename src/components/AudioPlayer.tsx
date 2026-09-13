@@ -68,7 +68,7 @@ export function AudioPlayer({
   const abort = useRef<AbortController | null>(null);
   const speaker = useRef<SpeakHandle | null>(null);
   const scrollBox = useRef<HTMLDivElement | null>(null);
-  const activeLine = useRef<HTMLElement | null>(null);
+  const activeLine = useRef<HTMLParagraphElement | null>(null);
   const manualScrollUntil = useRef(0);
   const autoScrolling = useRef(0);
   const savedAt = useRef(0);
