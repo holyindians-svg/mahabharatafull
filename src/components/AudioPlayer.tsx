@@ -52,7 +52,7 @@ export function AudioPlayer({ title, subtitle, minutes, className }: AudioPlayer
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-surface-2/70 p-5 backdrop-blur-sm",
+        "min-w-0 rounded-xl border border-border bg-surface-2/70 p-5 backdrop-blur-sm",
         className,
       )}
     >
@@ -73,7 +73,7 @@ export function AudioPlayer({ title, subtitle, minutes, className }: AudioPlayer
         </span>
       </div>
 
-      <div className="mt-5 flex items-center gap-4">
+      <div className="mt-5 flex min-w-0 items-center gap-4">
         <button
           type="button"
           onClick={() => setPlaying((p) => !p)}
@@ -83,7 +83,7 @@ export function AudioPlayer({ title, subtitle, minutes, className }: AudioPlayer
           {playing ? <Pause className="size-5" /> : <Play className="size-5 translate-x-[1px]" />}
         </button>
 
-        <div className="w-full">
+        <div className="min-w-0 flex-1">
           <Slider
             value={[position]}
             max={duration}
@@ -98,8 +98,8 @@ export function AudioPlayer({ title, subtitle, minutes, className }: AudioPlayer
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex shrink-0 items-center gap-2">
           {SPEEDS.map((s) => (
             <button
               key={s}
