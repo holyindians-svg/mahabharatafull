@@ -36,6 +36,35 @@ import characters32 from "@/assets/hd/characters/krisna.jpg";
 import characters33 from "@/assets/hd/characters/balarama.jpg";
 import characters34 from "@/assets/hd/characters/satjaki.jpg";
 import characters35 from "@/assets/hd/characters/kritavarma.jpg";
+import characters36 from "@/assets/hd/characters/narada.jpg";
+import characters37 from "@/assets/hd/characters/vaisampajana.jpg";
+import characters38 from "@/assets/hd/characters/ugrasrava-sauti.jpg";
+import characters39 from "@/assets/hd/characters/saunaka.jpg";
+import characters40 from "@/assets/hd/characters/utanka.jpg";
+import characters41 from "@/assets/hd/characters/astika.jpg";
+import characters42 from "@/assets/hd/characters/bhrigu.jpg";
+import characters43 from "@/assets/hd/characters/kasjapa.jpg";
+import characters44 from "@/assets/hd/characters/visvamitra.jpg";
+import characters45 from "@/assets/hd/characters/parasara.jpg";
+import characters46 from "@/assets/hd/characters/cjavana.jpg";
+import characters47 from "@/assets/hd/characters/durvasa.jpg";
+import characters48 from "@/assets/hd/characters/agastja.jpg";
+import characters49 from "@/assets/hd/characters/jajati.jpg";
+import characters50 from "@/assets/hd/characters/sakuntala.jpg";
+import characters51 from "@/assets/hd/characters/dusjanta.jpg";
+import characters52 from "@/assets/hd/characters/bharata.jpg";
+import characters53 from "@/assets/hd/characters/amba.jpg";
+import characters54 from "@/assets/hd/characters/ambika.jpg";
+import characters55 from "@/assets/hd/characters/ambalika.jpg";
+import characters56 from "@/assets/hd/characters/subhadra.jpg";
+import characters57 from "@/assets/hd/characters/hidimbi.jpg";
+import characters58 from "@/assets/hd/characters/uttara.jpg";
+import characters59 from "@/assets/hd/characters/parikshit.jpg";
+import characters60 from "@/assets/hd/characters/dzanamedzaja.jpg";
+import characters61 from "@/assets/hd/characters/dzarasandha.jpg";
+import characters62 from "@/assets/hd/characters/ekalavja.jpg";
+import characters63 from "@/assets/hd/characters/garuda.jpg";
+import characters64 from "@/assets/hd/characters/taksaka.jpg";
 
 import parvas0 from "@/assets/hd/parvas/adi-parva.jpg";
 import parvas1 from "@/assets/hd/parvas/sabha-parva.jpg";
@@ -111,6 +140,35 @@ const CHARACTER_IMAGES: Record<string, string> = {
   "balarama": characters33,
   "satjaki": characters34,
   "kritavarma": characters35,
+  "narada": characters36,
+  "vaisampajana": characters37,
+  "ugrasrava-sauti": characters38,
+  "saunaka": characters39,
+  "utanka": characters40,
+  "astika": characters41,
+  "bhrigu": characters42,
+  "kasjapa": characters43,
+  "visvamitra": characters44,
+  "parasara": characters45,
+  "cjavana": characters46,
+  "durvasa": characters47,
+  "agastja": characters48,
+  "jajati": characters49,
+  "sakuntala": characters50,
+  "dusjanta": characters51,
+  "bharata": characters52,
+  "amba": characters53,
+  "ambika": characters54,
+  "ambalika": characters55,
+  "subhadra": characters56,
+  "hidimbi": characters57,
+  "uttara": characters58,
+  "parikshit": characters59,
+  "dzanamedzaja": characters60,
+  "dzarasandha": characters61,
+  "ekalavja": characters62,
+  "garuda": characters63,
+  "taksaka": characters64,
 };
 
 const PARVA_IMAGES: Record<string, string> = {
