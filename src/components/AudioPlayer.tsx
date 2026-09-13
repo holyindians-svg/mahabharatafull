@@ -11,9 +11,9 @@ interface AudioPlayerProps {
   minutes: number;
   className?: string;
   /** Kontext položky (postava / kniha / zbraň) pro dotaz do textu. */
-  context?: string;
+  context?: string | undefined;
   /** Dotaz odeslaný do textu po kliknutí na již existující položku na stránce. */
-  question?: string | null;
+  question?: string | null | undefined;
 }
 
 const SPEEDS = [1, 1.25, 1.5] as const;

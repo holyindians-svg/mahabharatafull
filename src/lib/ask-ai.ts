@@ -1,8 +1,8 @@
 export interface AskAiOptions {
   question: string;
-  context?: string;
-  mode?: "ask" | "narrate";
-  signal?: AbortSignal;
+  context?: string | undefined;
+  mode?: "ask" | "narrate" | undefined;
+  signal?: AbortSignal | undefined;
   /** Volá se postupně s narůstajícím textem odpovědi. */
   onText: (text: string) => void;
 }
@@ -22,7 +22,7 @@ export async function askAi({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question, context, mode }),
-    signal,
+    signal: signal ?? null,
   });
 
   if (!response.ok || !response.body) {
