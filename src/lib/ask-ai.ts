@@ -73,5 +73,7 @@ export async function askAi({
     text += decoder.decode(value, { stream: true });
     onText(text);
   }
+  if (text.trim()) writeCache(key, text);
   return text;
 }
+
