@@ -21,6 +21,8 @@ export const Route = createFileRoute("/knihy/$slug")({
             { name: "description", content: parva.summary.slice(0, 155) },
             { property: "og:title", content: `${parva.name} – ${parva.sanskrit}` },
             { property: "og:description", content: parva.subtitle },
+            { property: "og:type", content: "article" },
+            { name: "twitter:card", content: "summary_large_image" },
           ]
         : [{ title: "Kniha Mahábháraty" }],
     };

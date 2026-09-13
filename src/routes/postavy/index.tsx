@@ -27,6 +27,8 @@ export const Route = createFileRoute("/postavy/")({
         property: "og:description",
         content: "Desítky postav eposu rozdělených do pěti rodových a spojeneckých skupin.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: People,

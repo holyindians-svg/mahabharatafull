@@ -20,6 +20,8 @@ export const Route = createFileRoute("/hledat")({
         property: "og:description",
         content: "Vyhledávání napříč knihami, postavami a zbraněmi eposu.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: SearchPage,
