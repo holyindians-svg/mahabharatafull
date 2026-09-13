@@ -1,6 +1,7 @@
 export type CharacterGroupId =
   | "predci"
   | "ucitele"
+  | "mudrci"
   | "panduovci"
   | "kauravove"
   | "bozske";

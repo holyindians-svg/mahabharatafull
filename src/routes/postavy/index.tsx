@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
   group: z
-    .enum(["vse", "predci", "ucitele", "panduovci", "kauravove", "bozske"])
+    .enum(["vse", "predci", "ucitele", "mudrci", "panduovci", "kauravove", "bozske"])
     .default("vse")
     .catch("vse"),
 });

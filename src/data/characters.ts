@@ -13,6 +13,12 @@ export const characterGroups: CharacterGroup[] = [
     description: "Mistři zbraní, kteří vychovali obě znesvářené strany.",
   },
   {
+    id: "mudrci",
+    title: "Mudrci a věštci (rišiové)",
+    description:
+      "Nebeští i pozemští rišiové, vypravěči a askété, jejichž slova, kletby a dary rozhýbávají celý epos.",
+  },
+  {
     id: "panduovci",
     title: "Pánduovci a spojenci",
     description: "Pět bratrů, jejich žena Draupadí a královské rody, které jim stály po boku.",
