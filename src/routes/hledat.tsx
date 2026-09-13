@@ -6,6 +6,8 @@ import { characters } from "@/data/characters";
 import { astras } from "@/data/astras";
 import { Page, PageHeader } from "@/components/Bits";
 import { askAi } from "@/lib/ask-ai";
+import { speak, type SpeakHandle } from "@/lib/speak";
+
 
 export const Route = createFileRoute("/hledat")({
   head: () => ({
