@@ -13,6 +13,21 @@ export interface SpeakHandle {
   done: Promise<void>;
 }
 
+/**
+ * Připraví text pro předčítání: vypustí sanskrtské glosy v závorkách,
+ * značky formátování a uvozovky, které hlas jinak vyslovuje jako šum.
+ * Psaný text na stránce se tím nemění.
+ */
+export function sanitizeForSpeech(text: string): string {
+  return text
+    .replace(/\([^()]{0,80}\)/g, " ")
+    .replace(/[*_#>`"„“”«»]/g, " ")
+    .replace(/\s*[–—-]\s*/g, " – ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 /** Rozdělí text na části, které bezpečně projdou jedním požadavkem. */
 export function chunkText(text: string, maxWords = 220): string[] {
   const words = (s: string) => (s.match(/\S+/g) ?? []).length;
