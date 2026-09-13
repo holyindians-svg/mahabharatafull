@@ -1,7 +1,9 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { characterGroups, characters, getCharacter } from "@/data/characters";
+import { narrationFor, relationAnswers } from "@/data/narrations";
+
 import { parvas } from "@/data/parvas";
 import { astras } from "@/data/astras";
 import { AudioPlayer } from "@/components/AudioPlayer";
