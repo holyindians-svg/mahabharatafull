@@ -139,7 +139,7 @@ function Home() {
 
         <Section title="Kde začít">
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[parvas[0], parvas[5], parvas[7]].map((p) => (
+            {[parvas[0]!, parvas[5]!, parvas[7]!].map((p) => (
               <EntityCard
                 key={p.slug}
                 to="/knihy/$slug"
@@ -160,7 +160,7 @@ function Home() {
             <AudioPlayer
               title="Bhagavadgíta – zpěv Vznešeného"
               subtitle="Bhíšma Parva, rozhovor Krišny s Ardžunou"
-              minutes={parvas[5].audioMinutes}
+              minutes={parvas[5]!.audioMinutes}
             />
             <p className="text-sm leading-relaxed text-muted-foreground">
               Každá kniha, postava i zbraň má v detailu vlastní panel předčítání. Můžete si vybrat

@@ -29,7 +29,6 @@ export function EntityCard({
 }: EntityCardProps) {
   return (
     <Link
-      // @ts-expect-error – dynamické cesty ke detailům jsou v projektu vždy platné
       to={to}
       params={params}
       className={cn(

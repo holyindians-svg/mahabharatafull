@@ -33,7 +33,7 @@ export const Route = createFileRoute("/knihy/$slug")({
 function BookDetail() {
   const { parva } = Route.useLoaderData();
   const people = parva.characterSlugs.map(getCharacter).filter(Boolean);
-  const next = parvas[parva.order % parvas.length];
+  const next = parvas[parva.order % parvas.length]!;
 
   return (
     <div>
