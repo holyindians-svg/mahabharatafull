@@ -1,5 +1,78 @@
 const SAMPLE_RATE = 24000;
 
+let sharedAudioContext: AudioContext | null = null;
+
+function getAudioContext() {
+  if (typeof window === "undefined" || !("AudioContext" in window)) return null;
+  if (!sharedAudioContext || sharedAudioContext.state === "closed") {
+    sharedAudioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+  }
+  return sharedAudioContext;
+}
+
+/** Aktivuje zvuk přímo v obsluze dotyku, což vyžaduje hlavně iOS/PWA. */
+export function primeAudioPlayback() {
+  const ctx = getAudioContext();
+  if (!ctx) return Promise.resolve(false);
+  const resume = ctx.state === "suspended" ? ctx.resume() : Promise.resolve();
+  return resume.then(() => {
+    const source = ctx.createBufferSource();
+    source.buffer = ctx.createBuffer(1, 1, SAMPLE_RATE);
+    source.connect(ctx.destination);
+    source.start();
+    return ctx.state === "running";
+  }).catch(() => false);
+}
+
+/** Po návratu aplikace z pozadí znovu aktivuje již povolený zvuk. */
+export function resumeAudioPlayback() {
+  const ctx = sharedAudioContext;
+  if (!ctx || ctx.state !== "suspended") return;
+  void ctx.resume().catch(() => {});
+}
+
+async function readSpeechAudio(response: Response, onAudio: (bytes: Uint8Array) => void) {
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(message.trim() || "Hlas se nepodařilo získat.");
+  }
+
+  const parseLine = (line: string) => {
+    if (!line.startsWith("data:")) return;
+    const payload = line.slice(5).trim();
+    if (!payload || payload === "[DONE]") return;
+    let event: { type?: string; audio?: string };
+    try {
+      event = JSON.parse(payload) as { type?: string; audio?: string };
+    } catch {
+      return;
+    }
+    if (event.type !== "speech.audio.delta" || !event.audio) return;
+    const binary = atob(event.audio);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    onAudio(bytes);
+  };
+
+  if (response.body && typeof TextDecoderStream !== "undefined") {
+    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+    let pending = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      pending += value;
+      const lines = pending.split("\n");
+      pending = lines.pop() ?? "";
+      for (const line of lines) parseLine(line);
+    }
+    if (pending) parseLine(pending);
+    return;
+  }
+
+  const body = await response.text();
+  for (const line of body.split("\n")) parseLine(line);
+}
+
 export interface SpeakHandle {
   /** Okamžitě ukončí čtení. */
   stop: () => void;
@@ -35,9 +108,8 @@ export function speakBookPrecisely(
   segments: string[],
   options: PreciseBookOptions = {},
 ): SpeakHandle | null {
-  if (typeof window === "undefined" || !("AudioContext" in window)) return null;
-
-  const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
+  const ctx = getAudioContext();
+  if (!ctx) return null;
   const gain = ctx.createGain();
   gain.gain.value = options.muted ? 0 : 1;
   gain.connect(ctx.destination);
@@ -80,38 +152,12 @@ export function speakBookPrecisely(
       body: JSON.stringify({ text: sanitizeForSpeech(text) }),
       signal: controller.signal,
     });
-    if (!res.ok || !res.body) {
-      const message = await res.text().catch(() => "");
-      throw new Error(message.trim() || "Hlas se nepodařilo získat.");
-    }
     const chunks: Uint8Array[] = [];
     let total = 0;
-    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
-    let pending = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      pending += value;
-      const lines = pending.split("\n");
-      pending = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const payload = line.slice(5).trim();
-        if (!payload || payload === "[DONE]") continue;
-        let event: { type?: string; audio?: string };
-        try {
-          event = JSON.parse(payload) as { type?: string; audio?: string };
-        } catch {
-          continue;
-        }
-        if (event.type !== "speech.audio.delta" || !event.audio) continue;
-        const binary = atob(event.audio);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    await readSpeechAudio(res, (bytes) => {
         chunks.push(bytes);
         total += bytes.length;
-      }
-    }
+    });
     const pcm = new Uint8Array(total - (total % 2));
     let offset = 0;
     for (const chunk of chunks) {
@@ -192,9 +238,7 @@ export function speakBookPrecisely(
     }
     const remaining = Math.max(0, playhead - ctx.currentTime);
     await new Promise<void>((resolve) => setTimeout(resolve, remaining * 1000 + 100));
-  })().finally(() => {
-    if (!stopped) void ctx.close().catch(() => {});
-  });
+  })();
 
   return {
     stop: () => {
@@ -209,7 +253,7 @@ export function speakBookPrecisely(
           // zdroj už dohrál
         }
       }
-      void ctx.close().catch(() => {});
+      gain.disconnect();
     },
     setRate: (next) => {
       rate = next;
@@ -306,7 +350,18 @@ function groupSegments(segments: string[], maxWords = 220) {
  * úseky se plánují na jedné zvukové ose, takže čtení běží plynule.
  */
 export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
-  const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
+  const ctx = getAudioContext();
+  if (!ctx) {
+    const done = Promise.reject(new Error("Tento prohlížeč nepodporuje přehrávání zvuku."));
+    return {
+      stop: () => {},
+      setRate: () => {},
+      setMuted: () => {},
+      scheduledSeconds: () => 0,
+      elapsedSeconds: () => 0,
+      done,
+    };
+  }
   const gain = ctx.createGain();
   gain.gain.value = options.muted ? 0 : 1;
   gain.connect(ctx.destination);
@@ -386,35 +441,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
       body: JSON.stringify({ text: chunk }),
       signal: controller.signal,
     });
-    if (!res.ok || !res.body) {
-      const message = await res.text().catch(() => "");
-      throw new Error(message.trim() || "Hlas se nepodařilo získat.");
-    }
-    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
-    let buffer = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += value;
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const payload = line.slice(5).trim();
-        if (!payload || payload === "[DONE]") continue;
-        let event: { type?: string; audio?: string };
-        try {
-          event = JSON.parse(payload) as { type?: string; audio?: string };
-        } catch {
-          continue;
-        }
-        if (event.type !== "speech.audio.delta" || !event.audio) continue;
-        const binary = atob(event.audio);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        enqueue(bytes);
-      }
-    }
+    await readSpeechAudio(res, enqueue);
   };
 
   const done = (async () => {
@@ -444,9 +471,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
     // dočkáme dohrání
     const remaining = Math.max(0, playhead - ctx.currentTime);
     await new Promise<void>((resolve) => setTimeout(resolve, remaining * 1000 + 120));
-  })().finally(() => {
-    if (!stopped) void ctx.close().catch(() => {});
-  });
+  })();
 
   return {
     stop: () => {
@@ -461,7 +486,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
           // už dohrálo
         }
       }
-      void ctx.close().catch(() => {});
+      gain.disconnect();
     },
 
     setRate: (next) => {

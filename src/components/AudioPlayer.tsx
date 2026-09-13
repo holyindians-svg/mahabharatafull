@@ -3,7 +3,13 @@ import { Headphones, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-rea
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { askAi } from "@/lib/ask-ai";
-import { speak, speakBookPrecisely, type SpeakHandle } from "@/lib/speak";
+import {
+  primeAudioPlayback,
+  resumeAudioPlayback,
+  speak,
+  speakBookPrecisely,
+  type SpeakHandle,
+} from "@/lib/speak";
 
 interface AudioPlayerProps {
   title: string;
@@ -315,6 +321,7 @@ export function AudioPlayer({
   }, [question]);
 
   const togglePlay = () => {
+    void primeAudioPlayback();
     if (playing || speaker.current) {
       stopSpeech();
       setPlaying(false);
@@ -365,6 +372,14 @@ export function AudioPlayer({
   useEffect(() => {
     speaker.current?.setMuted(muted);
   }, [muted]);
+
+  useEffect(() => {
+    const resumeWhenVisible = () => {
+      if (document.visibilityState === "visible" && speaker.current) resumeAudioPlayback();
+    };
+    document.addEventListener("visibilitychange", resumeWhenVisible);
+    return () => document.removeEventListener("visibilitychange", resumeWhenVisible);
+  }, []);
 
   const percent = (position / Math.max(duration, 1)) * 100;
 
@@ -438,7 +453,9 @@ export function AudioPlayer({
             value={[position]}
             max={Math.max(duration, 1)}
             step={1}
-            onValueChange={(v) => setPosition(v[0] ?? 0)}
+            aria-disabled="true"
+            tabIndex={-1}
+            className="pointer-events-none"
             aria-label="Průběh nahrávky"
           />
           <div className="mt-2 flex items-center justify-between text-xs tabular-nums text-muted-foreground">
@@ -517,7 +534,7 @@ export function AudioPlayer({
           onWheel={pauseAutoScroll}
           onTouchStart={pauseAutoScroll}
           onPointerDown={pauseAutoScroll}
-          className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground"
+          className="mt-3 h-64 space-y-2 overscroll-contain overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground"
         >
           {paragraphs.map((group) => {
             const isActive =

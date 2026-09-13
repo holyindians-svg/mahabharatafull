@@ -78,7 +78,7 @@ function BookDetail() {
 
       <Page>
         <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
-          <div>
+          <div className="order-2 lg:order-1">
             <h2 className="text-xl">Obsah knihy</h2>
             <div className="rule-gold mt-3 mb-5" />
             <p className="text-[15px] leading-relaxed text-muted-foreground">{parva.summary}</p>
@@ -99,7 +99,7 @@ function BookDetail() {
             </ol>
           </div>
 
-          <div className="space-y-6">
+          <div className="order-1 space-y-6 lg:order-2">
             <AudioPlayer
               title={parva.name}
               subtitle={`${parva.sanskrit} · předčítání`}
