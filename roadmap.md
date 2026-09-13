@@ -9,3 +9,4 @@
 - [x] Ověřit ostrost, přiřazení a ořezy na počítači i telefonu.
 - [x] Plynulý poslech celé Ádi Parvy se zvýrazňováním a posouváním textu.
 - [x] Přeložit nahranou anglickou Ádi Parvu (řádky 1–13717) do češtiny a uložit do aplikace.
+- [ ] Zvýrazňovat Ádi Parvu přesně slovo po slově a pamatovat si konkrétní slovo.
