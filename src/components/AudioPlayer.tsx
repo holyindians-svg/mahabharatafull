@@ -105,6 +105,7 @@ export function AudioPlayer({
   }, [storageKey]);
 
   const stopSpeech = () => {
+    if (speaker.current) saveProgress(active, speed, true);
     speaker.current?.stop();
     speaker.current = null;
   };
