@@ -40,15 +40,15 @@ function BookDetail() {
   const people = parva.characterSlugs.map(getCharacter).filter(Boolean);
   const next = parvas[parva.order % parvas.length]!;
   const hasFullText = parva.slug === "adi-parva";
-  const [segments, setSegments] = useState<string[] | undefined>(
-    hasFullText ? adiParvaFallbackSegments() : undefined,
+  const [book, setBook] = useState<AdiParvaText | undefined>(
+    hasFullText ? adiParvaFallback() : undefined,
   );
 
   useEffect(() => {
     if (!hasFullText) return;
     let alive = true;
     void loadAdiParvaSegments().then((s) => {
-      if (alive) setSegments(s);
+      if (alive) setBook(s);
     });
     return () => {
       alive = false;
