@@ -295,6 +295,33 @@ export function AudioPlayer({
 
   const percent = (position / Math.max(duration, 1)) * 100;
 
+  /** Ruční posun textu na chvíli zastaví automatické sledování. */
+  const pauseAutoScroll = () => {
+    if (Date.now() < autoScrolling.current) return;
+    manualScrollUntil.current = Date.now() + 6000;
+  };
+
+  // Věty seskupené do odstavců, aby se zvýrazňoval celý čtený odstavec.
+  const paragraphs = useMemo(() => {
+    const list = segments ?? [];
+    const groups: {
+      from: number;
+      to: number;
+      items: { index: number; text: string }[];
+    }[] = [];
+    list.forEach((sentence, index) => {
+      const para = paragraphIndex?.[index] ?? index;
+      const last = groups[groups.length - 1];
+      if (last && (paragraphIndex?.[last.from] ?? last.from) === para) {
+        last.to = index;
+        last.items.push({ index, text: sentence });
+      } else {
+        groups.push({ from: index, to: index, items: [{ index, text: sentence }] });
+      }
+    });
+    return groups;
+  }, [segments, paragraphIndex]);
+
   return (
     <div
       className={cn(
