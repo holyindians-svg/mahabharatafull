@@ -51,6 +51,8 @@ export function AudioPlayer({
   presetText,
   presetAnswers,
   segments,
+  paragraphIndex,
+  progressKey,
 }: AudioPlayerProps) {
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
