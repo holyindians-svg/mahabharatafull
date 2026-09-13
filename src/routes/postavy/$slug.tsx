@@ -7,6 +7,7 @@ import { narrationFor, relationAnswers } from "@/data/narrations";
 import { parvas } from "@/data/parvas";
 import { astras } from "@/data/astras";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { primeAudioPlayback } from "@/lib/speak";
 import { EntityCard } from "@/components/EntityCard";
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
 
@@ -97,7 +98,11 @@ function CharacterDetail() {
               <li key={r}>
                 <button
                   type="button"
-                  onClick={() => setQuestion(r)}
+                  onPointerDown={() => void primeAudioPlayback()}
+                  onClick={() => {
+                    void primeAudioPlayback();
+                    setQuestion(r);
+                  }}
 
                   className="w-full rounded-lg border border-border bg-surface/70 px-4 py-3 text-left text-sm text-foreground/90 transition-colors hover:border-primary/50"
                 >

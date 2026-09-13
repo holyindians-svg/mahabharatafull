@@ -11,3 +11,4 @@
 - [x] Přeložit nahranou anglickou Ádi Parvu (řádky 1–13717) do češtiny a uložit do aplikace.
 - [x] Zvýrazňovat Ádi Parvu přesně slovo po slově a pamatovat si konkrétní slovo.
 - [x] Sjednotit Ádi Parvu na přirozený český mužský hlas a plynulý proud bez trhání.
+- [x] Opravit zobrazení a funkčnost přehrávače na mobilu a v PWA.
