@@ -6,11 +6,47 @@ const BodySchema = z.object({
   text: z.string().min(1).max(4000),
 });
 
-const MODEL = "openai/gpt-4o-mini-tts";
+const GEMINI_MODEL = "google/gemini-2.5-pro-tts";
+const FALLBACK_MODEL = "openai/gpt-4o-mini-tts";
 
-const INSTRUCTIONS =
-  "Mluv česky, mužským vyprávěcím hlasem. Klidné, důstojné tempo epického vypravěče. " +
-  "Sanskrtská jména vyslovuj zřetelně.";
+/** Pokyn k výslovnosti — u Gemini se předává přímo v textu. */
+const CZECH_DIRECTION =
+  "Přečti následující text jako rodilý český vypravěč, plynulou a čistou češtinou, " +
+  "s přirozenou českou intonací a klidným důstojným tempem. " +
+  "Bez ruského, ukrajinského nebo anglického přízvuku. " +
+  "Jména čti v české podobě přesně tak, jak jsou napsaná. Text:";
+
+const OPENAI_INSTRUCTIONS =
+  "Speak in fluent, native Czech (čeština) with natural Czech intonation and a calm, " +
+  "dignified narrator pace. No Russian, Ukrainian or English accent. " +
+  "Pronounce names exactly as written in Czech orthography.";
+
+const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/audio/speech";
+
+function geminiBody(text: string) {
+  return {
+    model: GEMINI_MODEL,
+    stream_format: "sse",
+    contents: [{ role: "user", parts: [{ text: `${CZECH_DIRECTION}\n\n${text}` }] }],
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: {
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Charon" } },
+      },
+    },
+  };
+}
+
+function openaiBody(text: string) {
+  return {
+    model: FALLBACK_MODEL,
+    input: text,
+    voice: "onyx",
+    instructions: OPENAI_INSTRUCTIONS,
+    stream_format: "sse",
+    response_format: "pcm",
+  };
+}
 
 export const Route = createFileRoute("/api/speech")({
   server: {
@@ -28,24 +64,28 @@ export const Route = createFileRoute("/api/speech")({
           return new Response("Neplatný text.", { status: 400 });
         }
 
-        let upstream: Response;
-        try {
-          upstream = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
+        const call = (payload: unknown) =>
+          fetch(GATEWAY_URL, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${apiKey}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              model: MODEL,
-              input: body.text,
-              voice: "onyx",
-              instructions: INSTRUCTIONS,
-              stream_format: "sse",
-              response_format: "pcm",
-            }),
+            body: JSON.stringify(payload),
             signal: request.signal,
           });
+
+        let upstream: Response;
+        try {
+          upstream = await call(geminiBody(body.text));
+          if (!upstream.ok || !upstream.body) {
+            const detail = await upstream.text().catch(() => "");
+            console.error("TTS gemini error", upstream.status, detail.slice(0, 300));
+            // Jednorázový fallback, aby zvuk nikdy zcela nechyběl.
+            if (upstream.status !== 402 && upstream.status !== 429) {
+              upstream = await call(openaiBody(body.text));
+            }
+          }
         } catch (error) {
           if (request.signal.aborted) return new Response(null, { status: 499 });
           console.error("TTS fetch failed", error);
