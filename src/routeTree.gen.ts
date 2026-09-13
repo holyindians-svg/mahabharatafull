@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KnihyIndexRouteImport } from './routes/knihy/index'
 import { Route as KnihySlugRouteImport } from './routes/knihy/$slug'
+import { Route as PostavyIndexRouteImport } from './routes/postavy/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const KnihySlugRoute = KnihySlugRouteImport.update({
   path: '/knihy/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PostavyIndexRoute = PostavyIndexRouteImport.update({
+  id: '/postavy/',
+  path: '/postavy/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/knihy/': typeof KnihyIndexRoute
+  '/postavy/': typeof PostavyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/knihy': typeof KnihyIndexRoute
+  '/postavy': typeof PostavyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/knihy/': typeof KnihyIndexRoute
+  '/postavy/': typeof PostavyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/knihy/$slug' | '/knihy/'
+  fullPaths: '/' | '/knihy/$slug' | '/knihy/' | '/postavy/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/knihy/$slug' | '/knihy'
-  id: '__root__' | '/' | '/knihy/$slug' | '/knihy/'
+  to: '/' | '/knihy/$slug' | '/knihy' | '/postavy'
+  id: '__root__' | '/' | '/knihy/$slug' | '/knihy/' | '/postavy/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   KnihySlugRoute: typeof KnihySlugRoute
   KnihyIndexRoute: typeof KnihyIndexRoute
+  PostavyIndexRoute: typeof PostavyIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KnihySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/postavy/': {
+      id: '/postavy/'
+      path: '/postavy'
+      fullPath: '/postavy/'
+      preLoaderRoute: typeof PostavyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   KnihySlugRoute: KnihySlugRoute,
   KnihyIndexRoute: KnihyIndexRoute,
+  PostavyIndexRoute: PostavyIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
