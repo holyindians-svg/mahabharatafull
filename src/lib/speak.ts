@@ -60,7 +60,8 @@ export function speakBookPrecisely(
     if (index < startSegment) return;
     const value = index === startSegment ? segment.slice(startChar).trimStart() : segment;
     if (!value) return;
-    if (group && wordCount(group.text) + wordCount(value) > 150) {
+    const groupLimit = groups.length === 0 ? 55 : 110;
+    if (group && wordCount(group.text) + wordCount(value) > groupLimit) {
       groups.push(group);
       group = null;
     }
@@ -156,12 +157,17 @@ export function speakBookPrecisely(
 
   const done = (async () => {
     if (ctx.state === "suspended") await ctx.resume().catch(() => {});
-    for (const current of groups) {
+    let nextAudio = groups[0] ? fetchPcm(groups[0].text) : null;
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+      const current = groups[groupIndex];
+      if (!current || !nextAudio) break;
       if (stopped) return;
       while (!stopped && playhead - ctx.currentTime > 60) {
         await new Promise<void>((resolve) => setTimeout(resolve, 350));
       }
-      const pcm = await fetchPcm(current.text);
+      const pcm = await nextAudio;
+      const following = groups[groupIndex + 1];
+      nextAudio = following ? fetchPcm(following.text) : null;
       if (stopped || pcm.length === 0) return;
       const samples = new Int16Array(pcm.buffer, pcm.byteOffset, pcm.byteLength / 2);
       const floats = Float32Array.from(samples, (sample) => sample / 32768);
