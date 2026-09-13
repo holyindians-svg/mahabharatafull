@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AstryIndexRouteImport } from './routes/astry/index'
+import { Route as AstrySlugRouteImport } from './routes/astry/$slug'
 import { Route as KnihyIndexRouteImport } from './routes/knihy/index'
 import { Route as KnihySlugRouteImport } from './routes/knihy/$slug'
 import { Route as PostavyIndexRouteImport } from './routes/postavy/index'
@@ -24,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
 const AstryIndexRoute = AstryIndexRouteImport.update({
   id: '/astry/',
   path: '/astry/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AstrySlugRoute = AstrySlugRouteImport.update({
+  id: '/astry/$slug',
+  path: '/astry/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KnihyIndexRoute = KnihyIndexRouteImport.update({
@@ -49,6 +55,7 @@ const PostavySlugRoute = PostavySlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
   '/astry/': typeof AstryIndexRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
   '/astry': typeof AstryIndexRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
   '/astry/': typeof AstryIndexRoute
@@ -76,16 +85,25 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/astry/$slug'
     | '/knihy/$slug'
     | '/postavy/$slug'
     | '/astry/'
     | '/knihy/'
     | '/postavy/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/knihy/$slug' | '/postavy/$slug' | '/astry' | '/knihy' | '/postavy'
+  to:
+    | '/'
+    | '/astry/$slug'
+    | '/knihy/$slug'
+    | '/postavy/$slug'
+    | '/astry'
+    | '/knihy'
+    | '/postavy'
   id:
     | '__root__'
     | '/'
+    | '/astry/$slug'
     | '/knihy/$slug'
     | '/postavy/$slug'
     | '/astry/'
@@ -95,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AstrySlugRoute: typeof AstrySlugRoute
   KnihySlugRoute: typeof KnihySlugRoute
   PostavySlugRoute: typeof PostavySlugRoute
   AstryIndexRoute: typeof AstryIndexRoute
@@ -116,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/astry'
       fullPath: '/astry/'
       preLoaderRoute: typeof AstryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/astry/$slug': {
+      id: '/astry/$slug'
+      path: '/astry/$slug'
+      fullPath: '/astry/$slug'
+      preLoaderRoute: typeof AstrySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/knihy/': {
@@ -151,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AstrySlugRoute: AstrySlugRoute,
   KnihySlugRoute: KnihySlugRoute,
   PostavySlugRoute: PostavySlugRoute,
   AstryIndexRoute: AstryIndexRoute,
