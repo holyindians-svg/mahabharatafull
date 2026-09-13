@@ -22,7 +22,7 @@ export const Route = createFileRoute("/hledat")({
       },
     ],
   }),
-  component: SearchPage;
+  component: SearchPage,
 });
 
 const norm = (s: string) =>
