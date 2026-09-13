@@ -146,14 +146,17 @@ function SearchPage() {
       {q.length < 2 ? (
         <p className="text-sm text-muted-foreground">Zadejte alespoň dva znaky.</p>
       ) : total === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Pro „{query}“ jsme nic nenašli. Zkuste jiné jméno nebo název.
-        </p>
+        answerBlock ?? (
+          <p className="text-sm text-muted-foreground">
+            Pro „{query}“ jsme nic nenašli. Zkuste jiné jméno nebo název.
+          </p>
+        )
       ) : (
         <div className="space-y-10">
           <p className="text-sm text-muted-foreground">
             Nalezeno {total} záznamů pro „{query}“.
           </p>
+          {answerBlock}
 
           <ResultGroup icon={BookOpen} title="Knihy" count={results.parvas.length}>
             {results.parvas.map((p) => (
