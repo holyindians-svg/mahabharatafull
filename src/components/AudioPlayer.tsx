@@ -152,7 +152,11 @@ export function AudioPlayer({
       muted,
       segments,
       startIndex,
-      onSegment: (i) => setActive(i),
+      onSegment: (i) => {
+        // Zvýraznění jde vždy jen dopředu, nikdy neskočí zpět.
+        setActive((prev) => (prev === null || i > prev ? i : prev));
+        saveProgress(i);
+      },
     });
     speaker.current = handle;
     handle.done
