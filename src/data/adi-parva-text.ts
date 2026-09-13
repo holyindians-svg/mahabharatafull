@@ -11,8 +11,11 @@ import { narrationFor } from "./narrations";
 /** Rozdělí odstavec na věty, které se při čtení zvýrazňují. */
 function toSentences(paragraph: string): string[] {
   const parts = paragraph.match(/[^.!?…]+[.!?…]*/g) ?? [paragraph];
-  return parts.map((s) => s.trim()).filter(Boolean);
+  return parts
+    .map((s) => s.trim())
+    .filter((s) => /\p{L}/u.test(s));
 }
+
 
 /** Náhradní text, dokud se úplné znění nenačte. */
 export function adiParvaFallbackSegments(): string[] {
