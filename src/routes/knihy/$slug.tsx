@@ -106,7 +106,10 @@ function BookDetail() {
               minutes={parva.audioMinutes}
               context={`Kniha: ${parva.order}. ${parva.name} (${parva.sanskrit}) — ${parva.subtitle}`}
               presetText={narrationFor("parva", parva.slug)}
-              segments={segments}
+              segments={book?.segments}
+              paragraphIndex={book?.paragraphIndex}
+              progressKey={hasFullText ? `book:${parva.slug}` : undefined}
+
 
             />
 
