@@ -21,6 +21,10 @@ interface AudioPlayerProps {
   presetAnswers?: Record<string, string> | undefined;
   /** Věty celé knihy: čtou se plynule za sebou a sledují se v textu. */
   segments?: string[] | undefined;
+  /** Ke každé větě index odstavce (pro zvýraznění celého odstavce). */
+  paragraphIndex?: number[] | undefined;
+  /** Klíč pro uložení pozice přehrávání do paměti zařízení. */
+  progressKey?: string | undefined;
 }
 
 
