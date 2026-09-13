@@ -171,11 +171,24 @@ export function AudioPlayer({
       });
   };
 
-  // Právě čtená věta se sama posune do zorného pole.
+  // Čtená pasáž se posune jen tehdy, když se blíží k okraji viditelné plochy.
   useEffect(() => {
     if (active === null) return;
     if (Date.now() < manualScrollUntil.current) return;
-    activeLine.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    const box = scrollBox.current;
+    const line = activeLine.current;
+    if (!box || !line) return;
+    const top = line.offsetTop - box.offsetTop;
+    const center = top + line.offsetHeight / 2 - box.clientHeight / 2;
+    const relative = top + line.offsetHeight / 2 - box.scrollTop;
+    const inComfortZone =
+      relative > box.clientHeight * 0.25 && relative < box.clientHeight * 0.75;
+    if (inComfortZone) return;
+    autoScrolling.current = Date.now() + 900;
+    box.scrollTo({
+      top: Math.max(0, Math.min(center, box.scrollHeight - box.clientHeight)),
+      behavior: "smooth",
+    });
   }, [active]);
 
 
