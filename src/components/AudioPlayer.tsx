@@ -68,8 +68,41 @@ export function AudioPlayer({
   const abort = useRef<AbortController | null>(null);
   const speaker = useRef<SpeakHandle | null>(null);
   const scrollBox = useRef<HTMLDivElement | null>(null);
-  const activeLine = useRef<HTMLParagraphElement | null>(null);
+  const activeLine = useRef<HTMLElement | null>(null);
   const manualScrollUntil = useRef(0);
+  const autoScrolling = useRef(0);
+  const savedAt = useRef(0);
+  const storageKey = progressKey ? `mahabharata:progress:${progressKey}` : null;
+
+  /** Uloží pozici v knize do paměti zařízení. */
+  const saveProgress = (index: number | null, rate = speed, force = false) => {
+    if (!storageKey || index === null) return;
+    const now = Date.now();
+    if (!force && now - savedAt.current < 2000) return;
+    savedAt.current = now;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ index, rate }));
+    } catch {
+      // paměť není dostupná
+    }
+  };
+
+  // Obnovení uložené pozice a rychlosti (až po hydrataci).
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { index?: number; rate?: number };
+      if (typeof saved.index === "number" && saved.index >= 0) setActive(saved.index);
+      if (typeof saved.rate === "number" && SPEEDS.includes(saved.rate as 1)) {
+        setSpeed(saved.rate);
+      }
+    } catch {
+      // uložená pozice je poškozená
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
 
   const stopSpeech = () => {
     speaker.current?.stop();
