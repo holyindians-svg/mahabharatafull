@@ -3,6 +3,8 @@ import { Sparkles } from "lucide-react";
 import { astras, getAstra } from "@/data/astras";
 import { characters } from "@/data/characters";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { narrationFor } from "@/data/narrations";
+
 import { EntityCard } from "@/components/EntityCard";
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
 
@@ -86,7 +88,9 @@ function AstraDetail() {
               subtitle="Popis zbraně – předčítání"
               minutes={astra.audioMinutes}
               context={`Zbraň: ${astra.name} (${astra.sanskrit}) — ${astra.kind}`}
+              presetText={narrationFor("astra", astra.slug)}
             />
+
             <div className="rounded-xl border border-border bg-surface/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Nositelé</p>
               <div className="mt-3 flex flex-wrap gap-2">
