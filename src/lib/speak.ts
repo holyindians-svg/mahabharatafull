@@ -58,7 +58,35 @@ interface SpeakOptions {
   rate?: number;
   muted?: boolean;
   signal?: AbortSignal;
+  /** Věty k přečtení; má přednost před textem a umožňuje sledování čtení. */
+  segments?: string[];
+  /** Od které věty se má začít. */
+  startIndex?: number;
+  /** Ohlásí začátek čtení dané věty (index v `segments`). */
+  onSegment?: (index: number) => void;
 }
+
+/** Seskupí věty do úseků, které bezpečně projdou jedním požadavkem. */
+function groupSegments(segments: string[], maxWords = 220) {
+  const words = (s: string) => (s.match(/\S+/g) ?? []).length;
+  const groups: { text: string; from: number; to: number }[] = [];
+  let current: { text: string; from: number; to: number } | null = null;
+  segments.forEach((segment, index) => {
+    if (!segment.trim()) return;
+    if (current && words(current.text) + words(segment) > maxWords) {
+      groups.push(current);
+      current = null;
+    }
+    if (!current) current = { text: segment, from: index, to: index };
+    else {
+      current.text += ` ${segment}`;
+      current.to = index;
+    }
+  });
+  if (current) groups.push(current);
+  return groups;
+}
+
 
 /**
  * Přečte text nahlas: text se po částech posílá na server a přijaté PCM
@@ -78,7 +106,9 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
   let startedAt = 0;
   let stopped = false;
   const sources: AudioBufferSourceNode[] = [];
+  const timers: ReturnType<typeof setTimeout>[] = [];
   let pending = new Uint8Array(0);
+  let groupStart: number | null = null;
 
   const enqueue = (incoming: Uint8Array) => {
     if (stopped) return;
@@ -102,10 +132,39 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
     } else {
       playhead = Math.max(playhead, ctx.currentTime);
     }
+    if (groupStart === null) groupStart = playhead;
     source.start(playhead);
     playhead += buffer.duration / rate;
     sources.push(source);
   };
+
+  /** Naplánuje zvýraznění vět uvnitř právě naplánovaného úseku. */
+  const scheduleSegments = (
+    segments: string[],
+    from: number,
+    to: number,
+    start: number,
+    end: number,
+  ) => {
+    const onSegment = options.onSegment;
+    if (!onSegment) return;
+    const lengths: number[] = [];
+    for (let i = from; i <= to; i++) lengths.push(Math.max(1, (segments[i] ?? "").length));
+    const total = lengths.reduce((a, b) => a + b, 0);
+    const span = Math.max(0, end - start);
+    let offset = 0;
+    lengths.forEach((len, i) => {
+      const at = start + (offset / total) * span;
+      offset += len;
+      const delay = Math.max(0, (at - ctx.currentTime) * 1000);
+      timers.push(
+        setTimeout(() => {
+          if (!stopped) onSegment(from + i);
+        }, delay),
+      );
+    });
+  };
+
 
   const streamChunk = async (chunk: string) => {
     const res = await fetch("/api/speech", {
@@ -147,9 +206,27 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
 
   const done = (async () => {
     if (ctx.state === "suspended") await ctx.resume().catch(() => {});
-    for (const chunk of chunkText(sanitizeForSpeech(text))) {
-      if (stopped) return;
-      await streamChunk(chunk);
+    const segments = options.segments;
+    if (segments?.length) {
+      const startIndex = Math.max(0, Math.min(options.startIndex ?? 0, segments.length - 1));
+      const groups = groupSegments(segments).filter((g) => g.to >= startIndex);
+      for (const group of groups) {
+        if (stopped) return;
+        // Nechceme mít naplánováno příliš mnoho zvuku dopředu.
+        while (!stopped && playhead - ctx.currentTime > 90) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 500));
+        }
+        if (stopped) return;
+        groupStart = null;
+        await streamChunk(sanitizeForSpeech(group.text));
+        const start = groupStart ?? ctx.currentTime;
+        scheduleSegments(segments, Math.max(group.from, startIndex), group.to, start, playhead);
+      }
+    } else {
+      for (const chunk of chunkText(sanitizeForSpeech(text))) {
+        if (stopped) return;
+        await streamChunk(chunk);
+      }
     }
     // dočkáme dohrání
     const remaining = Math.max(0, playhead - ctx.currentTime);
@@ -163,6 +240,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
       if (stopped) return;
       stopped = true;
       controller.abort();
+      for (const t of timers) clearTimeout(t);
       for (const s of sources) {
         try {
           s.stop();
@@ -172,6 +250,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
       }
       void ctx.close().catch(() => {});
     },
+
     setRate: (next) => {
       rate = next;
       for (const s of sources) {

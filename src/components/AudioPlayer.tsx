@@ -19,7 +19,10 @@ interface AudioPlayerProps {
   presetText?: string | null | undefined;
   /** Trvale uložené odpovědi na klikací položky (klíč = text položky). */
   presetAnswers?: Record<string, string> | undefined;
+  /** Věty celé knihy: čtou se plynule za sebou a sledují se v textu. */
+  segments?: string[] | undefined;
 }
+
 
 
 const SPEEDS = [1, 1.25, 1.5] as const;
@@ -43,6 +46,7 @@ export function AudioPlayer({
   question,
   presetText,
   presetAnswers,
+  segments,
 }: AudioPlayerProps) {
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
@@ -54,13 +58,18 @@ export function AudioPlayer({
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [active, setActive] = useState<number | null>(null);
   const abort = useRef<AbortController | null>(null);
   const speaker = useRef<SpeakHandle | null>(null);
+  const scrollBox = useRef<HTMLDivElement | null>(null);
+  const activeLine = useRef<HTMLParagraphElement | null>(null);
+  const manualScrollUntil = useRef(0);
 
   const stopSpeech = () => {
     speaker.current?.stop();
     speaker.current = null;
   };
+
 
   useEffect(
     () => () => {
@@ -88,6 +97,43 @@ export function AudioPlayer({
         }
       });
   };
+
+  /** Plynulé čtení celé knihy od zvolené věty, se sledováním textu. */
+  const startBook = (from: number) => {
+    if (!segments?.length) return;
+    stopSpeech();
+    const startIndex = Math.max(0, Math.min(from, segments.length - 1));
+    setError(null);
+    setActive(startIndex);
+    setPosition(0);
+    setPlaying(true);
+    const handle = speak("", {
+      rate: speed,
+      muted,
+      segments,
+      startIndex,
+      onSegment: (i) => setActive(i),
+    });
+    speaker.current = handle;
+    handle.done
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : "Hlas se nepodařilo získat.");
+      })
+      .finally(() => {
+        if (speaker.current === handle) {
+          speaker.current = null;
+          setPlaying(false);
+        }
+      });
+  };
+
+  // Právě čtená věta se sama posune do zorného pole.
+  useEffect(() => {
+    if (active === null) return;
+    if (Date.now() < manualScrollUntil.current) return;
+    activeLine.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [active]);
+
 
   const run = (q: string, mode: "ask" | "narrate") => {
     abort.current?.abort();
@@ -144,10 +190,15 @@ export function AudioPlayer({
       setPlaying(false);
       return;
     }
+    if (segments?.length && !question) {
+      startBook(active ?? 0);
+      return;
+    }
     if (text) {
       startSpeech(text);
       return;
     }
+
     if (presetText?.trim()) {
       // Uložené předčítání se přehraje okamžitě.
       setError(null);
@@ -285,6 +336,28 @@ export function AudioPlayer({
       />
       {error ? (
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{error}</p>
+      ) : segments?.length && !question ? (
+        <div
+          ref={scrollBox}
+          onScroll={() => {
+            manualScrollUntil.current = Date.now() + 6000;
+          }}
+          className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground"
+        >
+          {segments.map((s, i) => (
+            <p
+              key={i}
+              ref={i === active ? activeLine : undefined}
+              onClick={() => startBook(i)}
+              className={cn(
+                "cursor-pointer rounded-md px-1.5 py-0.5 transition-colors",
+                i === active ? "bg-primary/10 text-foreground" : "hover:text-foreground",
+              )}
+            >
+              {s}
+            </p>
+          ))}
+        </div>
       ) : text ? (
         <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground">
           {text
@@ -299,6 +372,7 @@ export function AudioPlayer({
           {loading ? "Načítám text…" : "Spusťte předčítání a text se doplní z eposu."}
         </p>
       )}
+
     </div>
   );
 }
