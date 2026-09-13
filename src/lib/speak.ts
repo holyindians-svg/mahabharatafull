@@ -162,7 +162,7 @@ export function speakBookPrecisely(
       const current = groups[groupIndex];
       if (!current || !nextAudio) break;
       if (stopped) return;
-      while (!stopped && playhead - ctx.currentTime > 60) {
+      while (!stopped && playhead - ctx.currentTime > 18) {
         await new Promise<void>((resolve) => setTimeout(resolve, 350));
       }
       const pcm = await nextAudio;
@@ -213,7 +213,9 @@ export function speakBookPrecisely(
     },
     setRate: (next) => {
       rate = next;
-      for (const source of sources) source.playbackRate.value = next;
+      // Právě znějící a již naplánovaný úsek se nechá přirozeně dohrát.
+      // Nová rychlost se použije od následující části, takže se nerozbije
+      // časování slov ani nevznikne mezera či opakování věty.
     },
     setMuted: (next) => {
       gain.gain.value = next ? 0 : 1;
