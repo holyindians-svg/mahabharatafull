@@ -364,9 +364,19 @@ export function AudioPlayer({
           <button
             type="button"
             onClick={() => {
-              stopSpeech();
+              speaker.current?.stop();
+              speaker.current = null;
               setPlaying(false);
               setPosition(0);
+              if (segments?.length) setActive(0);
+              if (storageKey) {
+                savedAt.current = 0;
+                try {
+                  localStorage.removeItem(storageKey);
+                } catch {
+                  // paměť není dostupná
+                }
+              }
             }}
             aria-label="Zpět na začátek"
             className="rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:text-foreground"
