@@ -17,6 +17,8 @@ export const Route = createFileRoute("/astry/")({
         property: "og:description",
         content: "Patnáct božských zbraní a artefaktů eposu, jejich účinky a majitelé.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Astras,

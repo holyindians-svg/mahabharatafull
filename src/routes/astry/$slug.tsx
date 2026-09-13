@@ -21,6 +21,8 @@ export const Route = createFileRoute("/astry/$slug")({
             { name: "description", content: a.effect.slice(0, 155) },
             { property: "og:title", content: `${a.name} – ${a.kind}` },
             { property: "og:description", content: a.effect.slice(0, 155) },
+            { property: "og:type", content: "article" },
+            { name: "twitter:card", content: "summary_large_image" },
           ]
         : [{ title: "Zbraň Mahábháraty" }],
     };

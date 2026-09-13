@@ -17,6 +17,8 @@ export const Route = createFileRoute("/knihy/")({
         property: "og:description",
         content: "Od Ádi Parvy po vzestup do nebe – všech 18 Parv s popisem a klíčovými událostmi.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Books,

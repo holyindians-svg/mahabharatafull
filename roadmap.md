@@ -6,4 +6,4 @@
 - [x] Ověřit hlavní obrazovky na počítači a telefonu.
 - [x] Nahradit titulní obraz a všech 69 ilustrací detailními HD verzemi bez změny motivů.
 - [x] Optimalizovat nové HD soubory pro rychlé načítání.
-- [ ] Ověřit ostrost, přiřazení a ořezy na počítači i telefonu.
+- [x] Ověřit ostrost, přiřazení a ořezy na počítači i telefonu.

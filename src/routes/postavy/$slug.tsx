@@ -22,6 +22,8 @@ export const Route = createFileRoute("/postavy/$slug")({
             { name: "description", content: c.description.slice(0, 155) },
             { property: "og:title", content: `${c.name} – ${c.epithet}` },
             { property: "og:description", content: c.description.slice(0, 155) },
+            { property: "og:type", content: "article" },
+            { name: "twitter:card", content: "summary_large_image" },
           ]
         : [{ title: "Postava Mahábháraty" }],
     };
