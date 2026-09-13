@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HledatRouteImport } from './routes/hledat'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiSpeechRouteImport } from './routes/api/speech'
 import { Route as AstryIndexRouteImport } from './routes/astry/index'
 import { Route as AstrySlugRouteImport } from './routes/astry/$slug'
 import { Route as KnihyIndexRouteImport } from './routes/knihy/index'
@@ -32,6 +33,11 @@ const HledatRoute = HledatRouteImport.update({
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSpeechRoute = ApiSpeechRouteImport.update({
+  id: '/api/speech',
+  path: '/api/speech',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AstryIndexRoute = AstryIndexRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/hledat': typeof HledatRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/speech': typeof ApiSpeechRoute
   '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/hledat': typeof HledatRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/speech': typeof ApiSpeechRoute
   '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/hledat': typeof HledatRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/speech': typeof ApiSpeechRoute
   '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/hledat'
     | '/api/chat'
+    | '/api/speech'
     | '/astry/$slug'
     | '/knihy/$slug'
     | '/postavy/$slug'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/hledat'
     | '/api/chat'
+    | '/api/speech'
     | '/astry/$slug'
     | '/knihy/$slug'
     | '/postavy/$slug'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/hledat'
     | '/api/chat'
+    | '/api/speech'
     | '/astry/$slug'
     | '/knihy/$slug'
     | '/postavy/$slug'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HledatRoute: typeof HledatRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiSpeechRoute: typeof ApiSpeechRoute
   AstrySlugRoute: typeof AstrySlugRoute
   KnihySlugRoute: typeof KnihySlugRoute
   PostavySlugRoute: typeof PostavySlugRoute
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/speech': {
+      id: '/api/speech'
+      path: '/api/speech'
+      fullPath: '/api/speech'
+      preLoaderRoute: typeof ApiSpeechRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/astry/': {
@@ -219,6 +239,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HledatRoute: HledatRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiSpeechRoute: ApiSpeechRoute,
   AstrySlugRoute: AstrySlugRoute,
   KnihySlugRoute: KnihySlugRoute,
   PostavySlugRoute: PostavySlugRoute,
