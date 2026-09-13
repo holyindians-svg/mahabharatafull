@@ -133,7 +133,7 @@ export function AudioPlayer({
       <div className="mt-5 flex min-w-0 items-center gap-4">
         <button
           type="button"
-          onClick={() => setPlaying((p) => !p)}
+          onClick={togglePlay}
           aria-label={playing ? "Pozastavit předčítání" : "Spustit předčítání"}
           className="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
@@ -196,8 +196,20 @@ export function AudioPlayer({
         className="mt-4 h-px w-full bg-primary/25"
         style={{ backgroundImage: `linear-gradient(to right, var(--gold) ${percent}%, transparent ${percent}%)` }}
       />
-      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-        Ukázka rozhraní předčítání — nahrávka bude doplněna později.
+      {error ? (
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{error}</p>
+      ) : text ? (
+        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground">
+          {text
+            .split(/\n{2,}/)
+            .filter(Boolean)
+            .map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+          {loading ? "Načítám text…" : "Spusťte předčítání a text se doplní z eposu."}
       </p>
     </div>
   );
