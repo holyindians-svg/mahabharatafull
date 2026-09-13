@@ -3,6 +3,7 @@
   "short_name": "Mahábhárata",
   "description": "18 knih, genealogie postav a božské zbraně indického eposu na jednom místě.",
   "lang": "cs",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
