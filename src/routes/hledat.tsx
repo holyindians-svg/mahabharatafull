@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Search, Swords, Users } from "lucide-react";
 import { parvas } from "@/data/parvas";
 import { characters } from "@/data/characters";
 import { astras } from "@/data/astras";
 import { Page, PageHeader } from "@/components/Bits";
+import { askAi } from "@/lib/ask-ai";
 
 export const Route = createFileRoute("/hledat")({
   head: () => ({
