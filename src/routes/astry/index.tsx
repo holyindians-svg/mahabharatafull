@@ -43,6 +43,7 @@ function Astras() {
             sanskrit={`${a.sanskrit} · ${a.deity}`}
             text={a.effect}
             minutes={a.audioMinutes}
+            className="border-primary/20"
           />
         ))}
       </div>
