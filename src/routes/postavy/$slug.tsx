@@ -1,7 +1,9 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { characterGroups, characters, getCharacter } from "@/data/characters";
+import { narrationFor, relationAnswers } from "@/data/narrations";
+
 import { parvas } from "@/data/parvas";
 import { astras } from "@/data/astras";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -35,9 +37,12 @@ export const Route = createFileRoute("/postavy/$slug")({
 function CharacterDetail() {
   const { character } = Route.useLoaderData();
   const [question, setQuestion] = useState<string | null>(null);
+  const presetText = useMemo(() => narrationFor("character", character.slug), [character.slug]);
+  const presetAnswers = useMemo(() => relationAnswers(character.slug), [character.slug]);
   const group = characterGroups.find((g) => g.id === character.group)!;
   const relatedParvas = parvas.filter((p) => p.characterSlugs.includes(character.slug));
   const relatedAstras = astras.filter((a) => a.owners.includes(character.name));
+
   const siblings = characters
     .filter((c) => c.group === character.group && c.slug !== character.slug)
     .slice(0, 4);
@@ -64,7 +69,10 @@ function CharacterDetail() {
               minutes={character.audioMinutes}
               context={`Postava: ${character.name} (${character.sanskrit}) — ${character.epithet}`}
               question={question}
+              presetText={presetText}
+              presetAnswers={presetAnswers}
             />
+
           </div>
         </div>
 
@@ -89,9 +97,8 @@ function CharacterDetail() {
               <li key={r}>
                 <button
                   type="button"
-                  onClick={() =>
-                    setQuestion(`${r} — vysvětli tuto vazbu postavy ${character.name} v eposu.`)
-                  }
+                  onClick={() => setQuestion(r)}
+
                   className="w-full rounded-lg border border-border bg-surface/70 px-4 py-3 text-left text-sm text-foreground/90 transition-colors hover:border-primary/50"
                 >
                   {r}

@@ -15,7 +15,12 @@ interface AudioPlayerProps {
   context?: string | undefined;
   /** Dotaz odeslaný do textu po kliknutí na již existující položku na stránce. */
   question?: string | null | undefined;
+  /** Trvale uložený text předčítání – zobrazí se okamžitě, bez dotazu. */
+  presetText?: string | null | undefined;
+  /** Trvale uložené odpovědi na klikací položky (klíč = text položky). */
+  presetAnswers?: Record<string, string> | undefined;
 }
+
 
 const SPEEDS = [1, 1.25, 1.5] as const;
 
@@ -36,10 +41,13 @@ export function AudioPlayer({
   className,
   context,
   question,
+  presetText,
+  presetAnswers,
 }: AudioPlayerProps) {
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(fallbackDuration);
+
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<number>(1);
   const [muted, setMuted] = useState(false);
@@ -116,7 +124,17 @@ export function AudioPlayer({
     setPosition(0);
     stopSpeech();
     setPlaying(false);
-    void run(question, "ask");
+    const stored = presetAnswers?.[question];
+    if (stored) {
+      // Okamžitá odpověď z uložených dat, bez dotazu přes API.
+      abort.current?.abort();
+      setLoading(false);
+      setError(null);
+      setText(stored);
+      startSpeech(stored);
+      return;
+    }
+    void run(`${question} — vysvětli tuto vazbu postavy ${title} v eposu.`, "ask");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question]);
 
@@ -130,10 +148,18 @@ export function AudioPlayer({
       startSpeech(text);
       return;
     }
+    if (presetText?.trim()) {
+      // Uložené předčítání se přehraje okamžitě.
+      setError(null);
+      setText(presetText);
+      startSpeech(presetText);
+      return;
+    }
     if (loading) return;
     setPlaying(true);
     void run(title, "narrate");
   };
+
 
   // Průběh se řídí skutečným přehráváním.
   useEffect(() => {

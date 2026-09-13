@@ -4,6 +4,8 @@ import { getParva, parvas } from "@/data/parvas";
 import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { narrationFor } from "@/data/narrations";
+
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
 
 export const Route = createFileRoute("/knihy/$slug")({
@@ -83,7 +85,9 @@ function BookDetail() {
               subtitle={`${parva.sanskrit} · předčítání`}
               minutes={parva.audioMinutes}
               context={`Kniha: ${parva.order}. ${parva.name} (${parva.sanskrit}) — ${parva.subtitle}`}
+              presetText={narrationFor("parva", parva.slug)}
             />
+
             <div className="rounded-xl border border-border bg-surface/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Zařazení</p>
               <div className="mt-3 flex flex-wrap gap-2">
