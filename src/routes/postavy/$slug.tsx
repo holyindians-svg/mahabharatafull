@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { characterGroups, characters, getCharacter } from "@/data/characters";
 import { parvas } from "@/data/parvas";
 import { astras } from "@/data/astras";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/postavy/$slug")({
 
 function CharacterDetail() {
   const { character } = Route.useLoaderData();
+  const [question, setQuestion] = useState<string | null>(null);
   const group = characterGroups.find((g) => g.id === character.group)!;
   const relatedParvas = parvas.filter((p) => p.characterSlugs.includes(character.slug));
   const relatedAstras = astras.filter((a) => a.owners.includes(character.name));
