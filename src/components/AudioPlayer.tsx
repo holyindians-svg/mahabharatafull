@@ -92,7 +92,7 @@ export function AudioPlayer({
   const abort = useRef<AbortController | null>(null);
   const speaker = useRef<SpeakHandle | null>(null);
   const scrollBox = useRef<HTMLDivElement | null>(null);
-  const activeLine = useRef<HTMLElement | null>(null);
+  const activeLine = useRef<HTMLSpanElement | null>(null);
   const manualScrollUntil = useRef(0);
   const autoScrolling = useRef(0);
   const savedAt = useRef(0);
@@ -262,7 +262,7 @@ export function AudioPlayer({
       top: Math.max(0, Math.min(center, box.scrollHeight - box.clientHeight)),
       behavior: "smooth",
     });
-  }, [active]);
+  }, [active, activeChar]);
 
 
   const run = (q: string, mode: "ask" | "narrate") => {
@@ -525,7 +525,6 @@ export function AudioPlayer({
             return (
               <p
                 key={group.from}
-                ref={isActive ? activeLine : undefined}
                 className={cn(
                   "rounded-md px-1.5 py-0.5 transition-colors",
                   isActive ? "bg-primary/10" : "",
