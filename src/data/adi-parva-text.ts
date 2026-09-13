@@ -23,10 +23,34 @@ export function adiParvaFallbackSegments(): string[] {
   return fallback.split(/\n{2,}/).flatMap(toSentences);
 }
 
-let cache: string[] | null = null;
+/** Ke každé větě index odstavce, do kterého patří. */
+export function paragraphIndexFor(paragraphs: string[]): number[] {
+  const map: number[] = [];
+  paragraphs.forEach((p, pi) => {
+    for (const _ of toSentences(p)) map.push(pi);
+  });
+  return map;
+}
 
-/** Věty celé knihy v pořadí čtení. */
-export async function loadAdiParvaSegments(): Promise<string[]> {
+export interface AdiParvaText {
+  segments: string[];
+  /** paragraphIndex[i] = index odstavce pro větu i */
+  paragraphIndex: number[];
+}
+
+/** Náhradní obsah, dokud se úplné znění nenačte. */
+export function adiParvaFallback(): AdiParvaText {
+  const paragraphs = (narrationFor("parva", "adi-parva") ?? "").split(/\n{2,}/);
+  return {
+    segments: paragraphs.flatMap(toSentences),
+    paragraphIndex: paragraphIndexFor(paragraphs),
+  };
+}
+
+let cache: AdiParvaText | null = null;
+
+/** Věty celé knihy v pořadí čtení, včetně rozdělení na odstavce. */
+export async function loadAdiParvaSegments(): Promise<AdiParvaText> {
   if (cache) return cache;
   try {
     const res = await fetch("/texty/adi-parva.json");
@@ -34,10 +58,13 @@ export async function loadAdiParvaSegments(): Promise<string[]> {
     const data = (await res.json()) as { paragraphs?: string[] };
     const paragraphs = data.paragraphs ?? [];
     if (!paragraphs.length) throw new Error("prázdné");
-    cache = paragraphs.flatMap(toSentences);
+    cache = {
+      segments: paragraphs.flatMap(toSentences),
+      paragraphIndex: paragraphIndexFor(paragraphs),
+    };
     return cache;
   } catch {
-    cache = adiParvaFallbackSegments();
+    cache = adiParvaFallback();
     return cache;
   }
 }

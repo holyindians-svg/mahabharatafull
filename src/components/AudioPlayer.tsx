@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Headphones, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,10 @@ interface AudioPlayerProps {
   presetAnswers?: Record<string, string> | undefined;
   /** Věty celé knihy: čtou se plynule za sebou a sledují se v textu. */
   segments?: string[] | undefined;
+  /** Ke každé větě index odstavce (pro zvýraznění celého odstavce). */
+  paragraphIndex?: number[] | undefined;
+  /** Klíč pro uložení pozice přehrávání do paměti zařízení. */
+  progressKey?: string | undefined;
 }
 
 
@@ -47,6 +51,8 @@ export function AudioPlayer({
   presetText,
   presetAnswers,
   segments,
+  paragraphIndex,
+  progressKey,
 }: AudioPlayerProps) {
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
@@ -64,8 +70,42 @@ export function AudioPlayer({
   const scrollBox = useRef<HTMLDivElement | null>(null);
   const activeLine = useRef<HTMLParagraphElement | null>(null);
   const manualScrollUntil = useRef(0);
+  const autoScrolling = useRef(0);
+  const savedAt = useRef(0);
+  const storageKey = progressKey ? `mahabharata:progress:${progressKey}` : null;
+
+  /** Uloží pozici v knize do paměti zařízení. */
+  const saveProgress = (index: number | null, rate = speed, force = false) => {
+    if (!storageKey || index === null) return;
+    const now = Date.now();
+    if (!force && now - savedAt.current < 2000) return;
+    savedAt.current = now;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ index, rate }));
+    } catch {
+      // paměť není dostupná
+    }
+  };
+
+  // Obnovení uložené pozice a rychlosti (až po hydrataci).
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { index?: number; rate?: number };
+      if (typeof saved.index === "number" && saved.index >= 0) setActive(saved.index);
+      if (typeof saved.rate === "number" && SPEEDS.includes(saved.rate as 1)) {
+        setSpeed(saved.rate);
+      }
+    } catch {
+      // uložená pozice je poškozená
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
 
   const stopSpeech = () => {
+    if (speaker.current) saveProgress(active, speed, true);
     speaker.current?.stop();
     speaker.current = null;
   };
@@ -112,7 +152,11 @@ export function AudioPlayer({
       muted,
       segments,
       startIndex,
-      onSegment: (i) => setActive(i),
+      onSegment: (i) => {
+        // Zvýraznění jde vždy jen dopředu, nikdy neskočí zpět.
+        setActive((prev) => (prev === null || i > prev ? i : prev));
+        saveProgress(i);
+      },
     });
     speaker.current = handle;
     handle.done
@@ -127,11 +171,24 @@ export function AudioPlayer({
       });
   };
 
-  // Právě čtená věta se sama posune do zorného pole.
+  // Čtená pasáž se posune jen tehdy, když se blíží k okraji viditelné plochy.
   useEffect(() => {
     if (active === null) return;
     if (Date.now() < manualScrollUntil.current) return;
-    activeLine.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    const box = scrollBox.current;
+    const line = activeLine.current;
+    if (!box || !line) return;
+    const top = line.offsetTop - box.offsetTop;
+    const center = top + line.offsetHeight / 2 - box.clientHeight / 2;
+    const relative = top + line.offsetHeight / 2 - box.scrollTop;
+    const inComfortZone =
+      relative > box.clientHeight * 0.25 && relative < box.clientHeight * 0.75;
+    if (inComfortZone) return;
+    autoScrolling.current = Date.now() + 900;
+    box.scrollTo({
+      top: Math.max(0, Math.min(center, box.scrollHeight - box.clientHeight)),
+      behavior: "smooth",
+    });
   }, [active]);
 
 
@@ -228,6 +285,8 @@ export function AudioPlayer({
 
   useEffect(() => {
     speaker.current?.setRate(speed);
+    saveProgress(active, speed, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speed]);
 
   useEffect(() => {
@@ -235,6 +294,33 @@ export function AudioPlayer({
   }, [muted]);
 
   const percent = (position / Math.max(duration, 1)) * 100;
+
+  /** Ruční posun textu na chvíli zastaví automatické sledování. */
+  const pauseAutoScroll = () => {
+    if (Date.now() < autoScrolling.current) return;
+    manualScrollUntil.current = Date.now() + 6000;
+  };
+
+  // Věty seskupené do odstavců, aby se zvýrazňoval celý čtený odstavec.
+  const paragraphs = useMemo(() => {
+    const list = segments ?? [];
+    const groups: {
+      from: number;
+      to: number;
+      items: { index: number; text: string }[];
+    }[] = [];
+    list.forEach((sentence, index) => {
+      const para = paragraphIndex?.[index] ?? index;
+      const last = groups[groups.length - 1];
+      if (last && (paragraphIndex?.[last.from] ?? last.from) === para) {
+        last.to = index;
+        last.items.push({ index, text: sentence });
+      } else {
+        groups.push({ from: index, to: index, items: [{ index, text: sentence }] });
+      }
+    });
+    return groups;
+  }, [segments, paragraphIndex]);
 
   return (
     <div
@@ -305,9 +391,19 @@ export function AudioPlayer({
           <button
             type="button"
             onClick={() => {
-              stopSpeech();
+              speaker.current?.stop();
+              speaker.current = null;
               setPlaying(false);
               setPosition(0);
+              if (segments?.length) setActive(0);
+              if (storageKey) {
+                savedAt.current = 0;
+                try {
+                  localStorage.removeItem(storageKey);
+                } catch {
+                  // paměť není dostupná
+                }
+              }
             }}
             aria-label="Zpět na začátek"
             className="rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:text-foreground"
@@ -339,24 +435,38 @@ export function AudioPlayer({
       ) : segments?.length && !question ? (
         <div
           ref={scrollBox}
-          onScroll={() => {
-            manualScrollUntil.current = Date.now() + 6000;
-          }}
+          onWheel={pauseAutoScroll}
+          onTouchStart={pauseAutoScroll}
+          onPointerDown={pauseAutoScroll}
           className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground"
         >
-          {segments.map((s, i) => (
-            <p
-              key={i}
-              ref={i === active ? activeLine : undefined}
-              onClick={() => startBook(i)}
-              className={cn(
-                "cursor-pointer rounded-md px-1.5 py-0.5 transition-colors",
-                i === active ? "bg-primary/10 text-foreground" : "hover:text-foreground",
-              )}
-            >
-              {s}
-            </p>
-          ))}
+          {paragraphs.map((group) => {
+            const isActive =
+              active !== null && active >= group.from && active <= group.to;
+            return (
+              <p
+                key={group.from}
+                ref={isActive ? activeLine : undefined}
+                className={cn(
+                  "rounded-md px-1.5 py-0.5 transition-colors",
+                  isActive ? "bg-primary/10" : "",
+                )}
+              >
+                {group.items.map(({ index, text: sentence }) => (
+                  <span
+                    key={index}
+                    onClick={() => startBook(index)}
+                    className={cn(
+                      "cursor-pointer transition-colors",
+                      index === active ? "text-foreground" : "hover:text-foreground",
+                    )}
+                  >
+                    {sentence}{" "}
+                  </span>
+                ))}
+              </p>
+            );
+          })}
         </div>
       ) : text ? (
         <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground">

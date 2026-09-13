@@ -6,7 +6,7 @@ import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { narrationFor } from "@/data/narrations";
-import { adiParvaFallbackSegments, loadAdiParvaSegments } from "@/data/adi-parva-text";
+import { adiParvaFallback, loadAdiParvaSegments, type AdiParvaText } from "@/data/adi-parva-text";
 
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
 
@@ -40,15 +40,15 @@ function BookDetail() {
   const people = parva.characterSlugs.map(getCharacter).filter(Boolean);
   const next = parvas[parva.order % parvas.length]!;
   const hasFullText = parva.slug === "adi-parva";
-  const [segments, setSegments] = useState<string[] | undefined>(
-    hasFullText ? adiParvaFallbackSegments() : undefined,
+  const [book, setBook] = useState<AdiParvaText | undefined>(
+    hasFullText ? adiParvaFallback() : undefined,
   );
 
   useEffect(() => {
     if (!hasFullText) return;
     let alive = true;
     void loadAdiParvaSegments().then((s) => {
-      if (alive) setSegments(s);
+      if (alive) setBook(s);
     });
     return () => {
       alive = false;
@@ -106,7 +106,10 @@ function BookDetail() {
               minutes={parva.audioMinutes}
               context={`Kniha: ${parva.order}. ${parva.name} (${parva.sanskrit}) — ${parva.subtitle}`}
               presetText={narrationFor("parva", parva.slug)}
-              segments={segments}
+              segments={book?.segments}
+              paragraphIndex={book?.paragraphIndex}
+              progressKey={hasFullText ? `book:${parva.slug}` : undefined}
+
 
             />
 
