@@ -285,6 +285,8 @@ export function AudioPlayer({
 
   useEffect(() => {
     speaker.current?.setRate(speed);
+    saveProgress(active, speed, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speed]);
 
   useEffect(() => {
