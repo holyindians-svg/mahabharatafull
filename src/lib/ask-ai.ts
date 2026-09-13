@@ -7,6 +7,32 @@ export interface AskAiOptions {
   onText: (text: string) => void;
 }
 
+/** Krátkodobá paměť odpovědí, aby se stejný dotaz neposílal dvakrát. */
+const memory = new Map<string, string>();
+
+function cacheKey(mode: string, question: string, context?: string) {
+  return `mahabharata-ai:${mode}:${context ?? ""}:${question}`;
+}
+
+function readCache(key: string): string | null {
+  const local = memory.get(key);
+  if (local) return local;
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(key: string, value: string) {
+  memory.set(key, value);
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    /* paměť prohlížeče není k dispozici */
+  }
+}
+
 /**
  * Odešle dotaz do textu Mahábháraty a streamuje odpověď.
  * Vyhazuje chybu s uživatelskou zprávou, pokud se to nepovede.
@@ -18,6 +44,13 @@ export async function askAi({
   signal,
   onText,
 }: AskAiOptions): Promise<string> {
+  const key = cacheKey(mode, question, context);
+  const cached = readCache(key);
+  if (cached) {
+    onText(cached);
+    return cached;
+  }
+
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,6 +62,7 @@ export async function askAi({
     const message = await response.text().catch(() => "");
     throw new Error(message.trim() || "Odpověď se nepodařilo získat.");
   }
+
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
