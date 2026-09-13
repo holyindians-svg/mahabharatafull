@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Headphones, Pause, Play, RotateCcw, Volume2 } from "lucide-react";
+import { Headphones, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { askAi } from "@/lib/ask-ai";
+import { speak, type SpeakHandle } from "@/lib/speak";
 
 interface AudioPlayerProps {
   title: string;
   subtitle?: string;
-  /** Délka nahrávky v minutách (mock). */
+  /** Odhadovaná délka nahrávky v minutách. */
   minutes: number;
   className?: string;
   /** Kontext položky (postava / kniha / zbraň) pro dotaz do textu. */
@@ -26,7 +27,7 @@ function formatTime(totalSeconds: number) {
 
 /**
  * Přehrávač předčítání: po spuštění načte skutečný text k dané položce
- * z textu Mahábháraty a průběh se řídí podle jeho délky.
+ * z textu Mahábháraty a přečte ho nahlas.
  */
 export function AudioPlayer({
   title,
@@ -36,17 +37,49 @@ export function AudioPlayer({
   context,
   question,
 }: AudioPlayerProps) {
-  const duration = Math.max(60, Math.round(minutes * 60));
+  const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(fallbackDuration);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<number>(1);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [muted, setMuted] = useState(false);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
+  const speaker = useRef<SpeakHandle | null>(null);
 
-  useEffect(() => () => abort.current?.abort(), []);
+  const stopSpeech = () => {
+    speaker.current?.stop();
+    speaker.current = null;
+  };
+
+  useEffect(
+    () => () => {
+      abort.current?.abort();
+      stopSpeech();
+    },
+    [],
+  );
+
+  const startSpeech = (value: string) => {
+    stopSpeech();
+    if (!value.trim()) return;
+    setPosition(0);
+    setPlaying(true);
+    const handle = speak(value, { rate: speed, muted });
+    speaker.current = handle;
+    handle.done
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : "Hlas se nepodařilo získat.");
+      })
+      .finally(() => {
+        if (speaker.current === handle) {
+          speaker.current = null;
+          setPlaying(false);
+        }
+      });
+  };
 
   const run = (q: string, mode: "ask" | "narrate") => {
     abort.current?.abort();
@@ -55,17 +88,22 @@ export function AudioPlayer({
     setLoading(true);
     setError(null);
     setText("");
-    askAi({
+    return askAi({
       question: q,
       context,
       mode,
       signal: controller.signal,
       onText: setText,
     })
+      .then((full) => {
+        if (!controller.signal.aborted) startSpeech(full);
+        return full;
+      })
       .catch((e: unknown) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) return "";
         setError(e instanceof Error ? e.message : "Odpověď se nepodařilo získat.");
         setPlaying(false);
+        return "";
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -76,35 +114,50 @@ export function AudioPlayer({
   useEffect(() => {
     if (!question) return;
     setPosition(0);
+    stopSpeech();
     setPlaying(false);
-    run(question, "ask");
+    void run(question, "ask");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question]);
 
   const togglePlay = () => {
-    const next = !playing;
-    setPlaying(next);
-    if (next && !text && !loading) run(title, "narrate");
+    if (playing || speaker.current) {
+      stopSpeech();
+      setPlaying(false);
+      return;
+    }
+    if (text) {
+      startSpeech(text);
+      return;
+    }
+    if (loading) return;
+    setPlaying(true);
+    void run(title, "narrate");
   };
 
+  // Průběh se řídí skutečným přehráváním.
   useEffect(() => {
     if (!playing) return;
-    timer.current = setInterval(() => {
-      setPosition((prev) => {
-        const next = prev + speed;
-        if (next >= duration) {
-          setPlaying(false);
-          return duration;
-        }
-        return next;
-      });
-    }, 1000);
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
-  }, [playing, speed, duration]);
+    const timer = setInterval(() => {
+      const handle = speaker.current;
+      if (!handle) return;
+      const elapsed = handle.elapsedSeconds();
+      const scheduled = handle.scheduledSeconds();
+      setDuration(Math.max(scheduled, elapsed, 1));
+      setPosition(Math.min(elapsed, Math.max(scheduled, 1)));
+    }, 250);
+    return () => clearInterval(timer);
+  }, [playing]);
 
-  const percent = (position / duration) * 100;
+  useEffect(() => {
+    speaker.current?.setRate(speed);
+  }, [speed]);
+
+  useEffect(() => {
+    speaker.current?.setMuted(muted);
+  }, [muted]);
+
+  const percent = (position / Math.max(duration, 1)) * 100;
 
   return (
     <div
@@ -143,7 +196,7 @@ export function AudioPlayer({
         <div className="min-w-0 flex-1">
           <Slider
             value={[position]}
-            max={duration}
+            max={Math.max(duration, 1)}
             step={1}
             onValueChange={(v) => setPosition(v[0] ?? 0)}
             aria-label="Průběh nahrávky"
@@ -175,8 +228,9 @@ export function AudioPlayer({
           <button
             type="button"
             onClick={() => {
-              setPosition(0);
+              stopSpeech();
               setPlaying(false);
+              setPosition(0);
             }}
             aria-label="Zpět na začátek"
             className="rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:text-foreground"
@@ -184,12 +238,19 @@ export function AudioPlayer({
             <RotateCcw className="size-3.5" />
           </button>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Volume2 className="size-4" />
-          <div className="h-1 w-20 overflow-hidden rounded-full bg-muted">
-            <div className="h-full w-2/3 bg-primary/70" />
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => setMuted((m) => !m)}
+          aria-label={muted ? "Zapnout zvuk" : "Ztlumit zvuk"}
+          className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+          <span className="h-1 w-20 overflow-hidden rounded-full bg-muted">
+            <span
+              className={cn("block h-full bg-primary/70", muted ? "w-0" : "w-2/3")}
+            />
+          </span>
+        </button>
       </div>
 
       <div
