@@ -25,15 +25,67 @@ function formatTime(totalSeconds: number) {
 }
 
 /**
- * Vzhledově funkční přehrávač předčítání: průběh se pohybuje, zvuk se
- * nepřehrává. Připraveno na doplnění skutečné nahrávky.
+ * Přehrávač předčítání: po spuštění načte skutečný text k dané položce
+ * z textu Mahábháraty a průběh se řídí podle jeho délky.
  */
-export function AudioPlayer({ title, subtitle, minutes, className }: AudioPlayerProps) {
+export function AudioPlayer({
+  title,
+  subtitle,
+  minutes,
+  className,
+  context,
+  question,
+}: AudioPlayerProps) {
   const duration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<number>(1);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const abort = useRef<AbortController | null>(null);
+
+  useEffect(() => () => abort.current?.abort(), []);
+
+  const run = (q: string, mode: "ask" | "narrate") => {
+    abort.current?.abort();
+    const controller = new AbortController();
+    abort.current = controller;
+    setLoading(true);
+    setError(null);
+    setText("");
+    askAi({
+      question: q,
+      context,
+      mode,
+      signal: controller.signal,
+      onText: setText,
+    })
+      .catch((e: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(e instanceof Error ? e.message : "Odpověď se nepodařilo získat.");
+        setPlaying(false);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+  };
+
+  // Dotaz z již existujících klikacích položek na stránce.
+  useEffect(() => {
+    if (!question) return;
+    setPosition(0);
+    setPlaying(false);
+    run(question, "ask");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [question]);
+
+  const togglePlay = () => {
+    const next = !playing;
+    setPlaying(next);
+    if (next && !text && !loading) run(title, "narrate");
+  };
 
   useEffect(() => {
     if (!playing) return;
