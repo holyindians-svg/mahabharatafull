@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Search, Swords, Users } from "lucide-react";
 import { parvas } from "@/data/parvas";
 import { characters } from "@/data/characters";
 import { astras } from "@/data/astras";
 import { Page, PageHeader } from "@/components/Bits";
+import { askAi } from "@/lib/ask-ai";
 
 export const Route = createFileRoute("/hledat")({
   head: () => ({
@@ -58,6 +59,58 @@ function SearchPage() {
 
   const total = results.parvas.length + results.characters.length + results.astras.length;
 
+  // Stejný dotaz se navíc odešle do textu eposu a odpověď se vypíše níže.
+  const [answer, setAnswer] = useState("");
+  const [answerLoading, setAnswerLoading] = useState(false);
+  const [answerError, setAnswerError] = useState<string | null>(null);
+  const abort = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      abort.current?.abort();
+      setAnswer("");
+      setAnswerError(null);
+      setAnswerLoading(false);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      abort.current?.abort();
+      const controller = new AbortController();
+      abort.current = controller;
+      setAnswer("");
+      setAnswerError(null);
+      setAnswerLoading(true);
+      askAi({ question: trimmed, signal: controller.signal, onText: setAnswer })
+        .catch((e: unknown) => {
+          if (controller.signal.aborted) return;
+          setAnswerError(e instanceof Error ? e.message : "Odpověď se nepodařilo získat.");
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setAnswerLoading(false);
+        });
+    }, 800);
+    return () => clearTimeout(timeout);
+  }, [query]);
+
+  useEffect(() => () => abort.current?.abort(), []);
+
+  const answerBlock =
+    query.trim().length < 2 ? null : answerError ? (
+      <p className="text-sm text-muted-foreground">{answerError}</p>
+    ) : answerLoading && !answer ? (
+      <p className="text-sm text-muted-foreground">Hledám v textu eposu…</p>
+    ) : answer ? (
+      <div className="space-y-3 text-[15px] leading-relaxed text-muted-foreground">
+        {answer
+          .split(/\n{2,}/)
+          .filter(Boolean)
+          .map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+      </div>
+    ) : null;
+
   return (
     <Page>
       <PageHeader
@@ -93,14 +146,17 @@ function SearchPage() {
       {q.length < 2 ? (
         <p className="text-sm text-muted-foreground">Zadejte alespoň dva znaky.</p>
       ) : total === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Pro „{query}“ jsme nic nenašli. Zkuste jiné jméno nebo název.
-        </p>
+        answerBlock ?? (
+          <p className="text-sm text-muted-foreground">
+            Pro „{query}“ jsme nic nenašli. Zkuste jiné jméno nebo název.
+          </p>
+        )
       ) : (
         <div className="space-y-10">
           <p className="text-sm text-muted-foreground">
             Nalezeno {total} záznamů pro „{query}“.
           </p>
+          {answerBlock}
 
           <ResultGroup icon={BookOpen} title="Knihy" count={results.parvas.length}>
             {results.parvas.map((p) => (

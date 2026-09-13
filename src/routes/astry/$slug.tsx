@@ -85,6 +85,7 @@ function AstraDetail() {
               title={astra.name}
               subtitle="Popis zbraně – předčítání"
               minutes={astra.audioMinutes}
+              context={`Zbraň: ${astra.name} (${astra.sanskrit}) — ${astra.kind}`}
             />
             <div className="rounded-xl border border-border bg-surface/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Nositelé</p>

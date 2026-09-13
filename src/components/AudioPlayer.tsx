@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Headphones, Pause, Play, RotateCcw, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { askAi } from "@/lib/ask-ai";
 
 interface AudioPlayerProps {
   title: string;
@@ -9,6 +10,10 @@ interface AudioPlayerProps {
   /** Délka nahrávky v minutách (mock). */
   minutes: number;
   className?: string;
+  /** Kontext položky (postava / kniha / zbraň) pro dotaz do textu. */
+  context?: string | undefined;
+  /** Dotaz odeslaný do textu po kliknutí na již existující položku na stránce. */
+  question?: string | null | undefined;
 }
 
 const SPEEDS = [1, 1.25, 1.5] as const;
@@ -20,15 +25,67 @@ function formatTime(totalSeconds: number) {
 }
 
 /**
- * Vzhledově funkční přehrávač předčítání: průběh se pohybuje, zvuk se
- * nepřehrává. Připraveno na doplnění skutečné nahrávky.
+ * Přehrávač předčítání: po spuštění načte skutečný text k dané položce
+ * z textu Mahábháraty a průběh se řídí podle jeho délky.
  */
-export function AudioPlayer({ title, subtitle, minutes, className }: AudioPlayerProps) {
+export function AudioPlayer({
+  title,
+  subtitle,
+  minutes,
+  className,
+  context,
+  question,
+}: AudioPlayerProps) {
   const duration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<number>(1);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const abort = useRef<AbortController | null>(null);
+
+  useEffect(() => () => abort.current?.abort(), []);
+
+  const run = (q: string, mode: "ask" | "narrate") => {
+    abort.current?.abort();
+    const controller = new AbortController();
+    abort.current = controller;
+    setLoading(true);
+    setError(null);
+    setText("");
+    askAi({
+      question: q,
+      context,
+      mode,
+      signal: controller.signal,
+      onText: setText,
+    })
+      .catch((e: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(e instanceof Error ? e.message : "Odpověď se nepodařilo získat.");
+        setPlaying(false);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+  };
+
+  // Dotaz z již existujících klikacích položek na stránce.
+  useEffect(() => {
+    if (!question) return;
+    setPosition(0);
+    setPlaying(false);
+    run(question, "ask");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [question]);
+
+  const togglePlay = () => {
+    const next = !playing;
+    setPlaying(next);
+    if (next && !text && !loading) run(title, "narrate");
+  };
 
   useEffect(() => {
     if (!playing) return;
@@ -76,7 +133,7 @@ export function AudioPlayer({ title, subtitle, minutes, className }: AudioPlayer
       <div className="mt-5 flex min-w-0 items-center gap-4">
         <button
           type="button"
-          onClick={() => setPlaying((p) => !p)}
+          onClick={togglePlay}
           aria-label={playing ? "Pozastavit předčítání" : "Spustit předčítání"}
           className="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
@@ -139,9 +196,22 @@ export function AudioPlayer({ title, subtitle, minutes, className }: AudioPlayer
         className="mt-4 h-px w-full bg-primary/25"
         style={{ backgroundImage: `linear-gradient(to right, var(--gold) ${percent}%, transparent ${percent}%)` }}
       />
-      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-        Ukázka rozhraní předčítání — nahrávka bude doplněna později.
-      </p>
+      {error ? (
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{error}</p>
+      ) : text ? (
+        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 text-[13px] leading-relaxed text-muted-foreground">
+          {text
+            .split(/\n{2,}/)
+            .filter(Boolean)
+            .map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+          {loading ? "Načítám text…" : "Spusťte předčítání a text se doplní z eposu."}
+        </p>
+      )}
     </div>
   );
 }
