@@ -64,11 +64,18 @@ function SearchPage() {
   const [answerLoading, setAnswerLoading] = useState(false);
   const [answerError, setAnswerError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
+  const speaker = useRef<SpeakHandle | null>(null);
+
+  const stopSpeech = () => {
+    speaker.current?.stop();
+    speaker.current = null;
+  };
 
   useEffect(() => {
     const trimmed = query.trim();
     if (trimmed.length < 2) {
       abort.current?.abort();
+      stopSpeech();
       setAnswer("");
       setAnswerError(null);
       setAnswerLoading(false);
@@ -76,12 +83,22 @@ function SearchPage() {
     }
     const timeout = setTimeout(() => {
       abort.current?.abort();
+      stopSpeech();
       const controller = new AbortController();
       abort.current = controller;
       setAnswer("");
       setAnswerError(null);
       setAnswerLoading(true);
       askAi({ question: trimmed, signal: controller.signal, onText: setAnswer })
+        .then((full) => {
+          // Hotová odpověď se hned přečte nahlas.
+          if (controller.signal.aborted || !full.trim()) return;
+          const handle = speak(full);
+          speaker.current = handle;
+          handle.done.catch(() => {}).finally(() => {
+            if (speaker.current === handle) speaker.current = null;
+          });
+        })
         .catch((e: unknown) => {
           if (controller.signal.aborted) return;
           setAnswerError(e instanceof Error ? e.message : "Odpověď se nepodařilo získat.");
@@ -93,7 +110,14 @@ function SearchPage() {
     return () => clearTimeout(timeout);
   }, [query]);
 
-  useEffect(() => () => abort.current?.abort(), []);
+  useEffect(
+    () => () => {
+      abort.current?.abort();
+      stopSpeech();
+    },
+    [],
+  );
+
 
   const answerBlock =
     query.trim().length < 2 ? null : answerError ? (
