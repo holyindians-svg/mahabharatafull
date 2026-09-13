@@ -32,18 +32,22 @@ export function EntityCard({
       to={to}
       params={params}
       className={cn(
-        "card-relief group flex flex-col overflow-hidden rounded-xl transition-all duration-300 hover:-translate-y-1",
+        "card-relief mythic-card group flex flex-col overflow-hidden transition-all duration-500 hover:-translate-y-1",
+        tall && "mythic-card-portrait",
         className,
       )}
     >
-      <div className={cn("grain relative overflow-hidden", tall ? "h-64" : "h-44")}>
+      <div className={cn("mythic-frame grain relative overflow-hidden", tall ? "h-72" : "h-48")}>
         <img
           src={image}
           alt={title}
           loading="lazy"
-          className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.07]"
+          width={tall ? 302 : 452}
+          height={tall ? 302 : 304}
+          className="size-full object-cover transition-transform duration-1000 group-hover:scale-[1.045]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/25 to-transparent" />
+        <div className="mythic-frame-line absolute inset-2.5 border border-primary/35" />
         {overline ? (
           <span className="absolute left-3 top-3 rounded-full border border-primary/40 bg-background/70 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-primary backdrop-blur">
             {overline}
@@ -51,7 +55,8 @@ export function EntityCard({
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
+      <div className="relative flex flex-1 flex-col p-5 pt-4">
+        <span className="absolute left-1/2 top-0 size-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 border border-primary/60 bg-surface" />
         <h3 className="font-display text-lg leading-snug text-foreground transition-colors group-hover:text-primary">
           {title}
         </h3>

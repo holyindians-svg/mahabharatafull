@@ -108,7 +108,7 @@ function SearchPage() {
                 params={{ slug: p.slug }}
                 className="card-relief flex items-center gap-4 rounded-xl p-4"
               >
-                <img src={p.image} alt="" className="size-16 shrink-0 rounded-lg object-cover" />
+                <img src={p.image} alt={`Malovaná scéna: ${p.name}`} loading="lazy" width={64} height={64} className="size-16 shrink-0 rounded-sm object-cover" />
                 <span className="min-w-0">
                   <span className="block font-display text-foreground">{p.name}</span>
                   <span className="block truncate text-sm text-muted-foreground">
@@ -127,7 +127,7 @@ function SearchPage() {
                 params={{ slug: c.slug }}
                 className="card-relief flex items-center gap-4 rounded-xl p-4"
               >
-                <img src={c.image} alt="" className="size-16 shrink-0 rounded-lg object-cover" />
+                <img src={c.image} alt={`Malovaný portrét: ${c.name}`} loading="lazy" width={64} height={64} className="size-16 shrink-0 rounded-t-full rounded-b-sm object-cover" />
                 <span className="min-w-0">
                   <span className="block font-display text-foreground">{c.name}</span>
                   <span className="block truncate text-sm text-muted-foreground">{c.epithet}</span>
@@ -144,7 +144,7 @@ function SearchPage() {
                 params={{ slug: a.slug }}
                 className="card-relief flex items-center gap-4 rounded-xl p-4"
               >
-                <img src={a.image} alt="" className="size-16 shrink-0 rounded-lg object-cover" />
+                <img src={a.image} alt={`Fantasy ilustrace: ${a.name}`} loading="lazy" width={64} height={64} className="size-16 shrink-0 rounded-sm object-cover" />
                 <span className="min-w-0">
                   <span className="block font-display text-foreground">{a.name}</span>
                   <span className="block truncate text-sm text-muted-foreground">{a.kind}</span>

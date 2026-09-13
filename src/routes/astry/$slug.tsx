@@ -21,8 +21,6 @@ export const Route = createFileRoute("/astry/$slug")({
             { name: "description", content: a.effect.slice(0, 155) },
             { property: "og:title", content: `${a.name} – ${a.kind}` },
             { property: "og:description", content: a.effect.slice(0, 155) },
-            { property: "og:image", content: a.image },
-            { name: "twitter:image", content: a.image },
           ]
         : [{ title: "Zbraň Mahábháraty" }],
     };
@@ -40,7 +38,7 @@ function AstraDetail() {
   return (
     <div>
       <section className="grain relative h-[42vh] min-h-64 overflow-hidden border-b border-border">
-        <img src={astra.image} alt={astra.name} className="absolute inset-0 size-full object-cover" />
+        <img src={astra.image} alt={`Fantasy ilustrace artefaktu ${astra.name}`} width={362} height={363} className="absolute inset-0 size-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/20" />
         <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col justify-end px-5 pb-8 sm:px-8">
           <BackLink to="/astry">Zpět na zbraně</BackLink>

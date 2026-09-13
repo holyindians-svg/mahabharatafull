@@ -22,8 +22,6 @@ export const Route = createFileRoute("/postavy/$slug")({
             { name: "description", content: c.description.slice(0, 155) },
             { property: "og:title", content: `${c.name} – ${c.epithet}` },
             { property: "og:description", content: c.description.slice(0, 155) },
-            { property: "og:image", content: c.image },
-            { name: "twitter:image", content: c.image },
           ]
         : [{ title: "Postava Mahábháraty" }],
     };
@@ -46,11 +44,13 @@ function CharacterDetail() {
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[420px_1fr]">
         <div>
-          <div className="grain overflow-hidden rounded-xl border border-border">
+          <div className="grain overflow-hidden rounded-t-[13rem] rounded-b-md border border-primary/35 p-1.5 shadow-[var(--shadow-gold)]">
             <img
               src={character.image}
-              alt={`Portrét – ${character.name}`}
-              className="aspect-[4/5] w-full object-cover"
+              alt={`Malovaný portrét postavy ${character.name}`}
+              width={302}
+              height={302}
+              className="aspect-[4/5] w-full rounded-t-[12.5rem] rounded-b-sm object-cover"
             />
           </div>
           <div className="mt-5">

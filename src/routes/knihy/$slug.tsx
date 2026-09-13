@@ -21,8 +21,6 @@ export const Route = createFileRoute("/knihy/$slug")({
             { name: "description", content: parva.summary.slice(0, 155) },
             { property: "og:title", content: `${parva.name} – ${parva.sanskrit}` },
             { property: "og:description", content: parva.subtitle },
-            { property: "og:image", content: parva.image },
-            { name: "twitter:image", content: parva.image },
           ]
         : [{ title: "Kniha Mahábháraty" }],
     };
@@ -38,7 +36,7 @@ function BookDetail() {
   return (
     <div>
       <section className="grain relative h-[46vh] min-h-72 overflow-hidden border-b border-border">
-        <img src={parva.image} alt={parva.name} className="absolute inset-0 size-full object-cover" />
+        <img src={parva.image} alt={`Malovaná scéna: ${parva.name}`} width={302} height={304} className="absolute inset-0 size-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/20" />
         <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col justify-end px-5 pb-8 sm:px-8">
           <BackLink to="/knihy">Zpět na knihy</BackLink>

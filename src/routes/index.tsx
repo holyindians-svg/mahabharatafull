@@ -22,8 +22,6 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "18 Parv, desítky postav a magické astry v temně ladění encyklopedii.",
       },
-      { property: "og:image", content: HERO_IMAGE },
-      { name: "twitter:image", content: HERO_IMAGE },
     ],
   }),
   component: Home,
@@ -69,10 +67,13 @@ function Home() {
       <section className="grain relative flex min-h-[78vh] items-end overflow-hidden border-b border-border">
         <img
           src={HERO_IMAGE}
-          alt="Starověký indický chrám za soumraku"
+          alt="Krišna vede Ardžunův válečný vůz na bojišti Kurukšétry"
+          width={1920}
+          height={1088}
           className="absolute inset-0 size-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/55 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/20" />
         <div className="relative mx-auto w-full max-w-6xl px-5 pb-16 pt-28 sm:px-8">
           <Chip className="border-primary/40 text-primary">
             <Flame className="mr-2 size-3.5" /> Védská epika
