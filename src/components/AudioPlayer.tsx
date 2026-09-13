@@ -3,7 +3,7 @@ import { Headphones, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-rea
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { askAi } from "@/lib/ask-ai";
-import { speak, type SpeakHandle } from "@/lib/speak";
+import { speak, speakBookPrecisely, type SpeakHandle } from "@/lib/speak";
 
 interface AudioPlayerProps {
   title: string;
@@ -37,6 +37,29 @@ function formatTime(totalSeconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+interface TextToken {
+  text: string;
+  from: number;
+  to: number;
+  isWord: boolean;
+}
+
+function tokenize(text: string): TextToken[] {
+  const tokens: TextToken[] = [];
+  const pattern = /\s+|[^\s]+/gu;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    const value = match[0];
+    tokens.push({
+      text: value,
+      from: match.index,
+      to: match.index + value.length,
+      isWord: /[\p{L}\p{N}]/u.test(value),
+    });
+  }
+  return tokens;
+}
+
 /**
  * Přehrávač předčítání: po spuštění načte skutečný text k dané položce
  * z textu Mahábháraty a přečte ho nahlas.
@@ -65,23 +88,30 @@ export function AudioPlayer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<number | null>(null);
+  const [activeChar, setActiveChar] = useState(0);
   const abort = useRef<AbortController | null>(null);
   const speaker = useRef<SpeakHandle | null>(null);
   const scrollBox = useRef<HTMLDivElement | null>(null);
-  const activeLine = useRef<HTMLParagraphElement | null>(null);
+  const activeLine = useRef<HTMLElement | null>(null);
   const manualScrollUntil = useRef(0);
   const autoScrolling = useRef(0);
   const savedAt = useRef(0);
   const storageKey = progressKey ? `mahabharata:progress:${progressKey}` : null;
 
   /** Uloží pozici v knize do paměti zařízení. */
-  const saveProgress = (index: number | null, rate = speed, force = false) => {
+  const currentProgress = useRef({ index: null as number | null, charIndex: 0 });
+  const saveProgress = (
+    index: number | null,
+    charIndex = currentProgress.current.charIndex,
+    rate = speed,
+    force = false,
+  ) => {
     if (!storageKey || index === null) return;
     const now = Date.now();
     if (!force && now - savedAt.current < 2000) return;
     savedAt.current = now;
     try {
-      localStorage.setItem(storageKey, JSON.stringify({ index, rate }));
+      localStorage.setItem(storageKey, JSON.stringify({ index, charIndex, rate }));
     } catch {
       // paměť není dostupná
     }
@@ -93,8 +123,14 @@ export function AudioPlayer({
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { index?: number; rate?: number };
-      if (typeof saved.index === "number" && saved.index >= 0) setActive(saved.index);
+      const saved = JSON.parse(raw) as { index?: number; charIndex?: number; rate?: number };
+      if (typeof saved.index === "number" && saved.index >= 0) {
+        const charIndex =
+          typeof saved.charIndex === "number" && saved.charIndex >= 0 ? saved.charIndex : 0;
+        setActive(saved.index);
+        setActiveChar(charIndex);
+        currentProgress.current = { index: saved.index, charIndex };
+      }
       if (typeof saved.rate === "number" && SPEEDS.includes(saved.rate as 1)) {
         setSpeed(saved.rate);
       }
@@ -105,7 +141,14 @@ export function AudioPlayer({
   }, [storageKey]);
 
   const stopSpeech = () => {
-    if (speaker.current) saveProgress(active, speed, true);
+    if (speaker.current) {
+      saveProgress(
+        currentProgress.current.index,
+        currentProgress.current.charIndex,
+        speed,
+        true,
+      );
+    }
     speaker.current?.stop();
     speaker.current = null;
   };
@@ -139,25 +182,55 @@ export function AudioPlayer({
   };
 
   /** Plynulé čtení celé knihy od zvolené věty, se sledováním textu. */
-  const startBook = (from: number) => {
+  const startBook = (from: number, fromChar = 0) => {
     if (!segments?.length) return;
     stopSpeech();
     const startIndex = Math.max(0, Math.min(from, segments.length - 1));
     setError(null);
     setActive(startIndex);
+    setActiveChar(fromChar);
+    currentProgress.current = { index: startIndex, charIndex: fromChar };
     setPosition(0);
     setPlaying(true);
-    const handle = speak("", {
+    const handle = speakBookPrecisely(segments, {
       rate: speed,
       muted,
-      segments,
-      startIndex,
+      startSegment: startIndex,
+      startChar: fromChar,
       onSegment: (i) => {
-        // Zvýraznění jde vždy jen dopředu, nikdy neskočí zpět.
-        setActive((prev) => (prev === null || i > prev ? i : prev));
-        saveProgress(i);
+        setActive(i);
+        setActiveChar(0);
+        currentProgress.current = { index: i, charIndex: 0 };
+      },
+      onWord: ({ segmentIndex, charIndex }) => {
+        setActive(segmentIndex);
+        setActiveChar(charIndex);
+        currentProgress.current = { index: segmentIndex, charIndex };
+        saveProgress(segmentIndex, charIndex);
       },
     });
+    if (!handle) {
+      const fallback = speak("", {
+        rate: speed,
+        muted,
+        segments,
+        startIndex,
+        onSegment: (i) => {
+          setActive(i);
+          setActiveChar(0);
+          currentProgress.current = { index: i, charIndex: 0 };
+          saveProgress(i, 0);
+        },
+      });
+      speaker.current = fallback;
+      fallback.done.finally(() => {
+        if (speaker.current === fallback) {
+          speaker.current = null;
+          setPlaying(false);
+        }
+      });
+      return;
+    }
     speaker.current = handle;
     handle.done
       .catch((e: unknown) => {
@@ -248,7 +321,7 @@ export function AudioPlayer({
       return;
     }
     if (segments?.length && !question) {
-      startBook(active ?? 0);
+      startBook(active ?? 0, activeChar);
       return;
     }
     if (text) {
@@ -285,7 +358,7 @@ export function AudioPlayer({
 
   useEffect(() => {
     speaker.current?.setRate(speed);
-    saveProgress(active, speed, true);
+    saveProgress(active, activeChar, speed, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speed]);
 
@@ -307,16 +380,20 @@ export function AudioPlayer({
     const groups: {
       from: number;
       to: number;
-      items: { index: number; text: string }[];
+      items: { index: number; text: string; tokens: TextToken[] }[];
     }[] = [];
     list.forEach((sentence, index) => {
       const para = paragraphIndex?.[index] ?? index;
       const last = groups[groups.length - 1];
       if (last && (paragraphIndex?.[last.from] ?? last.from) === para) {
         last.to = index;
-        last.items.push({ index, text: sentence });
+        last.items.push({ index, text: sentence, tokens: tokenize(sentence) });
       } else {
-        groups.push({ from: index, to: index, items: [{ index, text: sentence }] });
+        groups.push({
+          from: index,
+          to: index,
+          items: [{ index, text: sentence, tokens: tokenize(sentence) }],
+        });
       }
     });
     return groups;
@@ -396,6 +473,8 @@ export function AudioPlayer({
               setPlaying(false);
               setPosition(0);
               if (segments?.length) setActive(0);
+              setActiveChar(0);
+              currentProgress.current = { index: segments?.length ? 0 : null, charIndex: 0 };
               if (storageKey) {
                 savedAt.current = 0;
                 try {
@@ -452,16 +531,36 @@ export function AudioPlayer({
                   isActive ? "bg-primary/10" : "",
                 )}
               >
-                {group.items.map(({ index, text: sentence }) => (
+                {group.items.map(({ index, tokens }) => (
                   <span
                     key={index}
-                    onClick={() => startBook(index)}
                     className={cn(
-                      "cursor-pointer transition-colors",
+                      "transition-colors",
                       index === active ? "text-foreground" : "hover:text-foreground",
                     )}
                   >
-                    {sentence}{" "}
+                    {tokens.map((token) => {
+                      const isCurrentWord =
+                        index === active &&
+                        token.isWord &&
+                        activeChar >= token.from &&
+                        activeChar < token.to;
+                      return (
+                        <span
+                          key={`${token.from}-${token.to}`}
+                          ref={isCurrentWord ? activeLine : undefined}
+                          onClick={token.isWord ? () => startBook(index, token.from) : undefined}
+                          className={cn(
+                            token.isWord ? "cursor-pointer" : "",
+                            isCurrentWord
+                              ? "rounded-sm bg-primary px-0.5 font-bold text-primary-foreground"
+                              : "",
+                          )}
+                        >
+                          {token.text}
+                        </span>
+                      );
+                    })}{" "}
                   </span>
                 ))}
               </p>
