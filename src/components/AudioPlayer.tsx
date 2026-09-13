@@ -210,7 +210,8 @@ export function AudioPlayer({
       ) : (
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
           {loading ? "Načítám text…" : "Spusťte předčítání a text se doplní z eposu."}
-      </p>
+        </p>
+      )}
     </div>
   );
 }
