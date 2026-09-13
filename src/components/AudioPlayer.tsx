@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Headphones, Pause, Play, RotateCcw, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { askAi } from "@/lib/ask-ai";
 
 interface AudioPlayerProps {
   title: string;
@@ -9,6 +10,10 @@ interface AudioPlayerProps {
   /** Délka nahrávky v minutách (mock). */
   minutes: number;
   className?: string;
+  /** Kontext položky (postava / kniha / zbraň) pro dotaz do textu. */
+  context?: string;
+  /** Dotaz odeslaný do textu po kliknutí na již existující položku na stránce. */
+  question?: string | null;
 }
 
 const SPEEDS = [1, 1.25, 1.5] as const;
