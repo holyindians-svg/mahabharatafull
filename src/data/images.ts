@@ -37,8 +37,6 @@ import characters33 from "@/assets/mythic/characters/balarama.jpg";
 import characters34 from "@/assets/mythic/characters/satjaki.jpg";
 import characters35 from "@/assets/mythic/characters/kritavarma.jpg";
 
-export const HERO_IMAGE = heroImage;
-
 import parvas0 from "@/assets/mythic/parvas/adi-parva.jpg";
 import parvas1 from "@/assets/mythic/parvas/sabha-parva.jpg";
 import parvas2 from "@/assets/mythic/parvas/vana-parva.jpg";
@@ -57,8 +55,6 @@ import parvas14 from "@/assets/mythic/parvas/ashramavasika-parva.jpg";
 import parvas15 from "@/assets/mythic/parvas/mausala-parva.jpg";
 import parvas16 from "@/assets/mythic/parvas/mahaprasthanika-parva.jpg";
 import parvas17 from "@/assets/mythic/parvas/svargarohanika-parva.jpg";
-
-export const HERO_IMAGE = heroImage;
 
 import astras0 from "@/assets/mythic/astras/brahmastra.jpg";
 import astras1 from "@/assets/mythic/astras/brahmasira.jpg";
@@ -159,7 +155,7 @@ const ASTRA_IMAGES: Record<string, string> = {
 const COLLECTIONS = { char: CHARACTER_IMAGES, parva: PARVA_IMAGES, astra: ASTRA_IMAGES } as const;
 
 /** Vrací konkrétní původní mytologickou ilustraci pro každý záznam. */
-export function imageFor(key: string): string {
+export function imageFor(key: string, _width?: number, _height?: number): string {
   const separator = key.indexOf("-");
   if (separator < 0) return HERO_IMAGE;
   const collection = key.slice(0, separator) as keyof typeof COLLECTIONS;
