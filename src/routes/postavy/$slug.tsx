@@ -60,6 +60,8 @@ function CharacterDetail() {
               title={character.name}
               subtitle="Životopis – předčítání"
               minutes={character.audioMinutes}
+              context={`Postava: ${character.name} (${character.sanskrit}) — ${character.epithet}`}
+              question={question}
             />
           </div>
         </div>
@@ -82,11 +84,16 @@ function CharacterDetail() {
           <h2 className="mt-9 font-display text-lg">Vazby a role</h2>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {character.relations.map((r) => (
-              <li
-                key={r}
-                className="rounded-lg border border-border bg-surface/70 px-4 py-3 text-sm text-foreground/90"
-              >
-                {r}
+              <li key={r}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuestion(`${r} — vysvětli tuto vazbu postavy ${character.name} v eposu.`)
+                  }
+                  className="w-full rounded-lg border border-border bg-surface/70 px-4 py-3 text-left text-sm text-foreground/90 transition-colors hover:border-primary/50"
+                >
+                  {r}
+                </button>
               </li>
             ))}
           </ul>
