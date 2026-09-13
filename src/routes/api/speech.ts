@@ -11,15 +11,17 @@ const FALLBACK_MODEL = "openai/gpt-4o-mini-tts";
 
 /** Pokyn k výslovnosti — u Gemini se předává přímo v textu. */
 const CZECH_DIRECTION =
-  "Přečti následující text jako rodilý český vypravěč, plynulou a čistou češtinou, " +
-  "s přirozenou českou intonací a klidným důstojným tempem. " +
-  "Bez ruského, ukrajinského nebo anglického přízvuku. " +
+  "Přečti následující text hlubokým, čistým mužským hlasem rodilého českého vypravěče. " +
+  "Mluv souvisle, přirozeně a plynule, s nenucenou českou intonací, klidným důstojným tempem " +
+  "a přirozenými pauzami pouze podle interpunkce. Nepoužívej velšský, anglický, ruský ani " +
+  "ukrajinský přízvuk. Jednotlivé věty nesmí znít jako oddělená hlášení. " +
   "Jména čti v české podobě přesně tak, jak jsou napsaná. Text:";
 
 const OPENAI_INSTRUCTIONS =
-  "Speak in fluent, native Czech (čeština) with natural Czech intonation and a calm, " +
-  "dignified narrator pace. No Russian, Ukrainian or English accent. " +
-  "Pronounce names exactly as written in Czech orthography.";
+  "Use a deep, clean male narrator voice in fluent native Czech. Speak as one continuous " +
+  "audiobook passage with natural Czech intonation, calm dignified pacing, and pauses only " +
+  "where Czech punctuation requires them. Never use a Welsh, English, Russian, or Ukrainian " +
+  "accent. Pronounce names exactly as written in Czech orthography.";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/audio/speech";
 

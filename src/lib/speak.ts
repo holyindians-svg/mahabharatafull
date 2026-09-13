@@ -35,113 +35,193 @@ export function speakBookPrecisely(
   segments: string[],
   options: PreciseBookOptions = {},
 ): SpeakHandle | null {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+  if (typeof window === "undefined" || !("AudioContext" in window)) return null;
 
-  const synth = window.speechSynthesis;
-  let segmentIndex = Math.max(0, Math.min(options.startSegment ?? 0, segments.length - 1));
-  let charIndex = Math.max(0, options.startChar ?? 0);
+  const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
+  const gain = ctx.createGain();
+  gain.gain.value = options.muted ? 0 : 1;
+  gain.connect(ctx.destination);
+  const controller = new AbortController();
+  const startSegment = Math.max(0, Math.min(options.startSegment ?? 0, segments.length - 1));
+  const startChar = Math.max(0, options.startChar ?? 0);
   let rate = options.rate ?? 1;
-  let muted = options.muted ?? false;
   let stopped = false;
-  let generation = 0;
-  let startedAt = performance.now();
-  let elapsedBeforeRestart = 0;
-  let resolveDone: () => void = () => {};
-  const done = new Promise<void>((resolve) => {
-    resolveDone = resolve;
+  let playhead = 0;
+  let startedAt = 0;
+  let scheduledDuration = 0;
+  const sources: AudioBufferSourceNode[] = [];
+  const timers: ReturnType<typeof setTimeout>[] = [];
+
+  type BookGroup = { text: string; from: number; to: number };
+  const groups: BookGroup[] = [];
+  let group: BookGroup | null = null;
+  const wordCount = (value: string) => value.match(/\S+/g)?.length ?? 0;
+  segments.forEach((segment, index) => {
+    if (index < startSegment) return;
+    const value = index === startSegment ? segment.slice(startChar).trimStart() : segment;
+    if (!value) return;
+    const groupLimit = groups.length === 0 ? 55 : 110;
+    if (group && wordCount(group.text) + wordCount(value) > groupLimit) {
+      groups.push(group);
+      group = null;
+    }
+    if (!group) group = { text: value, from: index, to: index };
+    else {
+      group.text += ` ${value}`;
+      group.to = index;
+    }
   });
+  if (group) groups.push(group);
 
-  const chooseCzechVoice = () =>
-    synth.getVoices().find((voice) => /^cs(?:-|_)/i.test(voice.lang));
-
-  const finish = () => {
-    if (stopped) return;
-    stopped = true;
-    resolveDone();
-  };
-
-  const speakCurrent = () => {
-    if (stopped || segmentIndex >= segments.length) {
-      finish();
-      return;
+  const fetchPcm = async (text: string) => {
+    const res = await fetch("/api/speech", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: sanitizeForSpeech(text) }),
+      signal: controller.signal,
+    });
+    if (!res.ok || !res.body) {
+      const message = await res.text().catch(() => "");
+      throw new Error(message.trim() || "Hlas se nepodařilo získat.");
     }
-    const whole = segments[segmentIndex] ?? "";
-    const from = Math.max(0, Math.min(charIndex, whole.length));
-    const spoken = whole.slice(from).trimStart();
-    const trimOffset = whole.slice(from).length - spoken.length;
-    charIndex = from + trimOffset;
-    if (!spoken) {
-      segmentIndex += 1;
-      charIndex = 0;
-      speakCurrent();
-      return;
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let pending = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      pending += value;
+      const lines = pending.split("\n");
+      pending = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        let event: { type?: string; audio?: string };
+        try {
+          event = JSON.parse(payload) as { type?: string; audio?: string };
+        } catch {
+          continue;
+        }
+        if (event.type !== "speech.audio.delta" || !event.audio) continue;
+        const binary = atob(event.audio);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        chunks.push(bytes);
+        total += bytes.length;
+      }
     }
-
-    const ownGeneration = ++generation;
-    const utterance = new SpeechSynthesisUtterance(spoken);
-    utterance.lang = "cs-CZ";
-    utterance.rate = rate;
-    utterance.volume = muted ? 0 : 1;
-    const voice = chooseCzechVoice();
-    if (voice) utterance.voice = voice;
-    options.onSegment?.(segmentIndex);
-    utterance.onboundary = (event) => {
-      if (stopped || ownGeneration !== generation) return;
-      if (event.name && event.name !== "word") return;
-      charIndex = from + trimOffset + event.charIndex;
-      options.onWord?.({ segmentIndex, charIndex });
-    };
-    utterance.onend = () => {
-      if (stopped || ownGeneration !== generation) return;
-      segmentIndex += 1;
-      charIndex = 0;
-      speakCurrent();
-    };
-    utterance.onerror = (event) => {
-      if (stopped || ownGeneration !== generation || event.error === "canceled") return;
-      finish();
-    };
-    synth.speak(utterance);
+    const pcm = new Uint8Array(total - (total % 2));
+    let offset = 0;
+    for (const chunk of chunks) {
+      const available = Math.min(chunk.length, pcm.length - offset);
+      pcm.set(chunk.subarray(0, available), offset);
+      offset += available;
+      if (offset >= pcm.length) break;
+    }
+    return pcm;
   };
 
-  const restart = () => {
-    if (stopped) return;
-    elapsedBeforeRestart += (performance.now() - startedAt) / 1000;
-    startedAt = performance.now();
-    generation += 1;
-    synth.cancel();
-    speakCurrent();
+  const scheduleWords = (current: BookGroup, at: number, duration: number) => {
+    const entries: { segmentIndex: number; charIndex: number; weight: number }[] = [];
+    for (let index = current.from; index <= current.to; index++) {
+      const sentence = segments[index] ?? "";
+      const fromChar = index === startSegment ? startChar : 0;
+      const pattern = /\S+/gu;
+      pattern.lastIndex = fromChar;
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(sentence)) !== null) {
+        const punctuation = match[0].match(/[.!?…,:;]$/u)?.[0];
+        const pause = punctuation && ".!?…".includes(punctuation) ? 7 : punctuation ? 3 : 0;
+        entries.push({
+          segmentIndex: index,
+          charIndex: match.index,
+          weight: Math.max(2, match[0].replace(/[^\p{L}\p{N}]/gu, "").length) + pause,
+        });
+      }
+    }
+    const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0) || 1;
+    let weightBefore = 0;
+    for (const entry of entries) {
+      const when = at + (weightBefore / totalWeight) * duration;
+      weightBefore += entry.weight;
+      const delay = Math.max(0, (when - ctx.currentTime) * 1000);
+      timers.push(setTimeout(() => {
+        if (stopped) return;
+        options.onSegment?.(entry.segmentIndex);
+        options.onWord?.({ segmentIndex: entry.segmentIndex, charIndex: entry.charIndex });
+      }, delay));
+    }
   };
 
-  synth.cancel();
-  speakCurrent();
+  const done = (async () => {
+    if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+    let nextAudio = groups[0] ? fetchPcm(groups[0].text) : null;
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+      const current = groups[groupIndex];
+      if (!current || !nextAudio) break;
+      if (stopped) return;
+      while (!stopped && playhead - ctx.currentTime > 18) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 350));
+      }
+      const pcm = await nextAudio;
+      const following = groups[groupIndex + 1];
+      nextAudio = following ? fetchPcm(following.text) : null;
+      if (stopped || pcm.length === 0) return;
+      const samples = new Int16Array(pcm.buffer, pcm.byteOffset, pcm.byteLength / 2);
+      const floats = Float32Array.from(samples, (sample) => sample / 32768);
+      const buffer = ctx.createBuffer(1, floats.length, SAMPLE_RATE);
+      buffer.copyToChannel(floats, 0);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = rate;
+      source.connect(gain);
+      if (playhead === 0) {
+        playhead = ctx.currentTime + 0.08;
+        startedAt = playhead;
+      } else {
+        playhead = Math.max(playhead, ctx.currentTime + 0.02);
+      }
+      const duration = buffer.duration / rate;
+      scheduleWords(current, playhead, duration);
+      source.start(playhead);
+      sources.push(source);
+      playhead += duration;
+      scheduledDuration = playhead - startedAt;
+    }
+    const remaining = Math.max(0, playhead - ctx.currentTime);
+    await new Promise<void>((resolve) => setTimeout(resolve, remaining * 1000 + 100));
+  })().finally(() => {
+    if (!stopped) void ctx.close().catch(() => {});
+  });
 
   return {
     stop: () => {
       if (stopped) return;
       stopped = true;
-      generation += 1;
-      synth.cancel();
-      resolveDone();
+      controller.abort();
+      for (const timer of timers) clearTimeout(timer);
+      for (const source of sources) {
+        try {
+          source.stop();
+        } catch {
+          // zdroj už dohrál
+        }
+      }
+      void ctx.close().catch(() => {});
     },
     setRate: (next) => {
-      if (rate === next) return;
       rate = next;
-      restart();
+      // Právě znějící a již naplánovaný úsek se nechá přirozeně dohrát.
+      // Nová rychlost se použije od následující části, takže se nerozbije
+      // časování slov ani nevznikne mezera či opakování věty.
     },
     setMuted: (next) => {
-      if (muted === next) return;
-      muted = next;
-      restart();
+      gain.gain.value = next ? 0 : 1;
     },
-    scheduledSeconds: () => {
-      const remainingWords = segments
-        .slice(segmentIndex)
-        .join(" ")
-        .match(/\S+/g)?.length ?? 0;
-      return elapsedBeforeRestart + remainingWords / (2.4 * rate);
-    },
-    elapsedSeconds: () => elapsedBeforeRestart + (performance.now() - startedAt) / 1000,
+    scheduledSeconds: () => scheduledDuration,
+    elapsedSeconds: () => (startedAt ? Math.max(0, ctx.currentTime - startedAt) : 0),
     done,
   };
 }
