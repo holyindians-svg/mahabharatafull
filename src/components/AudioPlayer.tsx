@@ -15,7 +15,12 @@ interface AudioPlayerProps {
   context?: string | undefined;
   /** Dotaz odeslaný do textu po kliknutí na již existující položku na stránce. */
   question?: string | null | undefined;
+  /** Trvale uložený text předčítání – zobrazí se okamžitě, bez dotazu. */
+  presetText?: string | null | undefined;
+  /** Trvale uložené odpovědi na klikací položky (klíč = text položky). */
+  presetAnswers?: Record<string, string> | undefined;
 }
+
 
 const SPEEDS = [1, 1.25, 1.5] as const;
 
