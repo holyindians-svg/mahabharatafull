@@ -147,7 +147,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
 
   const done = (async () => {
     if (ctx.state === "suspended") await ctx.resume().catch(() => {});
-    for (const chunk of chunkText(text)) {
+    for (const chunk of chunkText(sanitizeForSpeech(text))) {
       if (stopped) return;
       await streamChunk(chunk);
     }
