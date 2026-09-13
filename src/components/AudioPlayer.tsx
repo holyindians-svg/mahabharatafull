@@ -244,7 +244,7 @@ export function AudioPlayer({
       });
   };
 
-  // Čtená pasáž se posune jen tehdy, když se blíží k okraji viditelné plochy.
+  // Text pouze klidně následuje hlas a posune se až blízko okraje.
   useEffect(() => {
     if (active === null) return;
     if (Date.now() < manualScrollUntil.current) return;
@@ -255,9 +255,9 @@ export function AudioPlayer({
     const center = top + line.offsetHeight / 2 - box.clientHeight / 2;
     const relative = top + line.offsetHeight / 2 - box.scrollTop;
     const inComfortZone =
-      relative > box.clientHeight * 0.25 && relative < box.clientHeight * 0.75;
+      relative > box.clientHeight * 0.16 && relative < box.clientHeight * 0.84;
     if (inComfortZone) return;
-    autoScrolling.current = Date.now() + 900;
+    autoScrolling.current = Date.now() + 1200;
     box.scrollTo({
       top: Math.max(0, Math.min(center, box.scrollHeight - box.clientHeight)),
       behavior: "smooth",
