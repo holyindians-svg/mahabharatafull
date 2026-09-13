@@ -7,6 +7,8 @@ import { astras } from "@/data/astras";
 import { Page, PageHeader } from "@/components/Bits";
 import { askAi } from "@/lib/ask-ai";
 import { speak, type SpeakHandle } from "@/lib/speak";
+import { storedAnswerForQuery } from "@/data/narrations";
+
 
 
 export const Route = createFileRoute("/hledat")({
@@ -83,6 +85,16 @@ function SearchPage() {
       setAnswerLoading(false);
       return;
     }
+    const stored = storedAnswerForQuery(trimmed);
+    if (stored) {
+      // Okamžitá odpověď z uložených dat, bez dotazu přes API.
+      abort.current?.abort();
+      stopSpeech();
+      setAnswer(stored);
+      setAnswerError(null);
+      setAnswerLoading(false);
+      return;
+    }
     const timeout = setTimeout(() => {
       abort.current?.abort();
       stopSpeech();
@@ -92,6 +104,7 @@ function SearchPage() {
       setAnswerError(null);
       setAnswerLoading(true);
       askAi({ question: trimmed, signal: controller.signal, onText: setAnswer })
+
         .then((full) => {
           // Hotová odpověď se hned přečte nahlas.
           if (controller.signal.aborted || !full.trim()) return;
