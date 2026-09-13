@@ -82,6 +82,7 @@ function BookDetail() {
               title={parva.name}
               subtitle={`${parva.sanskrit} · předčítání`}
               minutes={parva.audioMinutes}
+              context={`Kniha: ${parva.order}. ${parva.name} (${parva.sanskrit}) — ${parva.subtitle}`}
             />
             <div className="rounded-xl border border-border bg-surface/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Zařazení</p>
