@@ -13,3 +13,7 @@
 - [x] Sjednotit Ádi Parvu na přirozený český mužský hlas a plynulý proud bez trhání.
 - [x] Opravit zobrazení a funkčnost přehrávače na mobilu a v PWA.
 - [x] Odstranit bílý okraj z ikon Mahábháraty a ověřit instalaci.
+- [x] Ověřit automatické aktualizace PWA (bez service workeru se vždy načte nejnovější verze).
+
+## Automatické aktualizace aplikace
+Aplikace záměrně nepoužívá service worker, takže se nic nedrží v trvalé mezipaměti. Po publikování nové verze ji uživatel vidí při příštím otevření aplikace s připojením k internetu — nikdy nemusí aplikaci mazat ani čistit mezipaměť. Manifest se servíruje s vynuceným ověřením čerstvosti.
