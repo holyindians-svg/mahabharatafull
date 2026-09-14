@@ -5,7 +5,7 @@ import {
   SYSTEM_PROMPT,
   buildCorpus,
 } from "@/lib/mahabharata-context.server";
-import { findAdiParvaPassages } from "@/lib/adi-parva-search.server";
+import { findEposPassages } from "@/lib/epos-search.server";
 
 const BodySchema = z.object({
   /** Dotaz uživatele, nebo název položky pro předčítání. */
@@ -36,17 +36,19 @@ export const Route = createFileRoute("/api/chat")({
 
         const system = body.mode === "narrate" ? NARRATION_PROMPT : SYSTEM_PROMPT;
 
-        // U dotazů prohledáme plný text Ádi Parvy a nalezené pasáže přiložíme.
+        // U dotazů prohledáme plný text eposu (knihy 1–18) a pasáže přiložíme.
         let passages = "";
         if (body.mode === "ask") {
-          passages = await findAdiParvaPassages(
+          passages = await findEposPassages(
             body.context ? `${body.question} ${body.context}` : body.question,
             new URL(request.url).origin,
           );
         }
 
         const userParts = [
-          passages ? `NALEZENÉ PASÁŽE Z ÁDI PARVY (plný text knihy):\n${passages}` : "",
+          passages
+            ? `NALEZENÉ PASÁŽE Z PLNÉHO TEXTU MAHÁBHÁRATY (u každého bloku je uvedena kniha):\n${passages}`
+            : "",
           "TEXT ENCYKLOPEDIE MAHÁBHÁRATY:",
           buildCorpus(),
           body.context ? `AKTUÁLNĚ ZOBRAZENÁ POLOŽKA:\n${body.context}` : "",
