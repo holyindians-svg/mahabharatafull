@@ -383,13 +383,14 @@ export function speakBookPrecisely(
     }
     const remaining = Math.max(0, playhead - ctx.currentTime);
     await new Promise<void>((resolve) => setTimeout(resolve, remaining * 1000 + 100));
-  })();
+  })().finally(releaseAwake);
 
   return {
     stop: () => {
       if (stopped) return;
       stopped = true;
       controller.abort();
+      releaseAwake();
       for (const timer of timers) clearTimeout(timer);
       for (const source of sources) {
         try {
