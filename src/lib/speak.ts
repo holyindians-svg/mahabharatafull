@@ -629,13 +629,14 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
     // dočkáme dohrání
     const remaining = Math.max(0, playhead - ctx.currentTime);
     await new Promise<void>((resolve) => setTimeout(resolve, remaining * 1000 + 120));
-  })();
+  })().finally(releaseAwake);
 
   return {
     stop: () => {
       if (stopped) return;
       stopped = true;
       controller.abort();
+      fallback?.stop();
       for (const t of timers) clearTimeout(t);
       for (const s of sources) {
         try {
@@ -645,10 +646,12 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
         }
       }
       gain.disconnect();
+      releaseAwake();
     },
 
     setRate: (next) => {
       rate = next;
+      fallback?.setRate(next);
       for (const s of sources) {
         try {
           s.playbackRate.value = next;
@@ -658,6 +661,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
       }
     },
     setMuted: (muted) => {
+      fallback?.setMuted(muted);
       gain.gain.value = muted ? 0 : 1;
     },
     scheduledSeconds: () => Math.max(0, playhead - startedAt),
