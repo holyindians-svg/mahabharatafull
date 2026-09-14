@@ -7,7 +7,7 @@ import { astras } from "@/data/astras";
 import { Page, PageHeader } from "@/components/Bits";
 import { askAi } from "@/lib/ask-ai";
 import { speak, type SpeakHandle } from "@/lib/speak";
-import { storedAnswerForQuery } from "@/data/narrations";
+
 
 
 
@@ -85,16 +85,7 @@ function SearchPage() {
       setAnswerLoading(false);
       return;
     }
-    const stored = storedAnswerForQuery(trimmed);
-    if (stored) {
-      // Okamžitá odpověď z uložených dat, bez dotazu přes API.
-      abort.current?.abort();
-      stopSpeech();
-      setAnswer(stored);
-      setAnswerError(null);
-      setAnswerLoading(false);
-      return;
-    }
+    // Každý dotaz se vždy hledá přes AI.
     const timeout = setTimeout(() => {
       abort.current?.abort();
       stopSpeech();
