@@ -63,58 +63,68 @@ function SearchPage() {
 
   const total = results.parvas.length + results.characters.length + results.astras.length;
 
-  // Stejný dotaz se navíc odešle do textu eposu a odpověď se vypíše níže.
+  // Stejný dotaz se odešle do textu eposu až po odeslání (lupa / Enter).
   const [answer, setAnswer] = useState("");
   const [answerLoading, setAnswerLoading] = useState(false);
   const [answerError, setAnswerError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
   const speaker = useRef<SpeakHandle | null>(null);
+  const field = useRef<HTMLTextAreaElement | null>(null);
 
   const stopSpeech = () => {
     speaker.current?.stop();
     speaker.current = null;
   };
 
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      abort.current?.abort();
-      stopSpeech();
-      setAnswer("");
-      setAnswerError(null);
-      setAnswerLoading(false);
-      return;
-    }
+  const runSearch = (raw: string) => {
+    const trimmed = raw.trim();
+    if (trimmed.length < 2) return;
     // Každý dotaz se vždy hledá přes AI.
-    const timeout = setTimeout(() => {
-      abort.current?.abort();
-      stopSpeech();
-      const controller = new AbortController();
-      abort.current = controller;
-      setAnswer("");
-      setAnswerError(null);
-      setAnswerLoading(true);
-      askAi({ question: trimmed, signal: controller.signal, onText: setAnswer })
-
-        .then((full) => {
-          // Hotová odpověď se hned přečte nahlas.
-          if (controller.signal.aborted || !full.trim()) return;
-          const handle = speak(full);
-          speaker.current = handle;
-          handle.done.catch(() => {}).finally(() => {
-            if (speaker.current === handle) speaker.current = null;
-          });
-        })
-        .catch((e: unknown) => {
-          if (controller.signal.aborted) return;
-          setAnswerError(e instanceof Error ? e.message : "Odpověď se nepodařilo získat.");
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setAnswerLoading(false);
+    abort.current?.abort();
+    stopSpeech();
+    const controller = new AbortController();
+    abort.current = controller;
+    setAnswer("");
+    setAnswerError(null);
+    setAnswerLoading(true);
+    field.current?.blur();
+    askAi({ question: trimmed, signal: controller.signal, onText: setAnswer })
+      .then((full) => {
+        // Hotová odpověď se hned přečte nahlas.
+        if (controller.signal.aborted || !full.trim()) return;
+        const handle = speak(full);
+        speaker.current = handle;
+        handle.done.catch(() => {}).finally(() => {
+          if (speaker.current === handle) speaker.current = null;
         });
-    }, 800);
-    return () => clearTimeout(timeout);
+      })
+      .catch((e: unknown) => {
+        if (controller.signal.aborted) return;
+        setAnswerError(e instanceof Error ? e.message : "Odpověď se nepodařilo získat.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setAnswerLoading(false);
+      });
+  };
+
+  // Krátký dotaz jen vymaže dosavadní odpověď, nic se neposílá.
+  useEffect(() => {
+    if (query.trim().length >= 2) return;
+    abort.current?.abort();
+    stopSpeech();
+    setAnswer("");
+    setAnswerError(null);
+    setAnswerLoading(false);
   }, [query]);
+
+  // Textové pole roste s obsahem, aby pojmulo i delší odstavec.
+  useEffect(() => {
+    const el = field.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [query]);
+
 
   useEffect(
     () => () => {
@@ -149,16 +159,37 @@ function SearchPage() {
         sanskrit="Knihy · Postavy · Zbraně"
         description="Zadejte jméno, název knihy nebo zbraně. Hledání pracuje nad celou encyklopedií – bez ohledu na diakritiku."
       >
-        <div className="mt-7 flex items-center gap-3 rounded-xl border border-input bg-surface/70 px-4 py-3 focus-within:border-primary/60">
-          <Search className="size-5 text-primary" />
-          <input
+        <form
+          className="mt-7 flex items-start gap-3 rounded-xl border border-input bg-surface/70 px-4 py-3 focus-within:border-primary/60"
+          onSubmit={(e) => {
+            e.preventDefault();
+            runSearch(query);
+          }}
+        >
+          <button
+            type="submit"
+            aria-label="Hledat"
+            className="mt-0.5 shrink-0 text-primary transition-colors hover:text-gold"
+          >
+            <Search className="size-5" />
+          </button>
+          <textarea
+            ref={field}
             value={query}
+            rows={1}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                runSearch(query);
+              }
+            }}
             placeholder="Např. Ardžuna, Brahmástra, hra v kostky…"
             aria-label="Hledaný výraz"
-            className="w-full bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
+            className="max-h-40 w-full resize-none overflow-y-auto bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
           />
-        </div>
+        </form>
+
         <div className="mt-3 flex flex-wrap gap-2">
           {["Ardžuna", "Bhagavadgíta", "Brahmástra", "Draupadí", "kostky"].map((s) => (
             <button
