@@ -159,16 +159,37 @@ function SearchPage() {
         sanskrit="Knihy · Postavy · Zbraně"
         description="Zadejte jméno, název knihy nebo zbraně. Hledání pracuje nad celou encyklopedií – bez ohledu na diakritiku."
       >
-        <div className="mt-7 flex items-center gap-3 rounded-xl border border-input bg-surface/70 px-4 py-3 focus-within:border-primary/60">
-          <Search className="size-5 text-primary" />
-          <input
+        <form
+          className="mt-7 flex items-start gap-3 rounded-xl border border-input bg-surface/70 px-4 py-3 focus-within:border-primary/60"
+          onSubmit={(e) => {
+            e.preventDefault();
+            runSearch(query);
+          }}
+        >
+          <button
+            type="submit"
+            aria-label="Hledat"
+            className="mt-0.5 shrink-0 text-primary transition-colors hover:text-gold"
+          >
+            <Search className="size-5" />
+          </button>
+          <textarea
+            ref={field}
             value={query}
+            rows={1}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                runSearch(query);
+              }
+            }}
             placeholder="Např. Ardžuna, Brahmástra, hra v kostky…"
             aria-label="Hledaný výraz"
-            className="w-full bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
+            className="max-h-40 w-full resize-none overflow-y-auto bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
           />
-        </div>
+        </form>
+
         <div className="mt-3 flex flex-wrap gap-2">
           {["Ardžuna", "Bhagavadgíta", "Brahmástra", "Draupadí", "kostky"].map((s) => (
             <button
