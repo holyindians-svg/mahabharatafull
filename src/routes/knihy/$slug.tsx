@@ -6,7 +6,12 @@ import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { narrationFor } from "@/data/narrations";
-import { adiParvaFallback, loadAdiParvaSegments, type AdiParvaText } from "@/data/adi-parva-text";
+import {
+  bookFallback,
+  hasFullTextFor,
+  loadBookSegments,
+  type BookText,
+} from "@/data/book-text";
 
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
 
