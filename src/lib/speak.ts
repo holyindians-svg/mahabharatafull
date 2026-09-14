@@ -1,6 +1,10 @@
 const SAMPLE_RATE = 24000;
 
 let sharedAudioContext: AudioContext | null = null;
+let sinkElement: HTMLAudioElement | null = null;
+let sinkNode: MediaStreamAudioDestinationNode | null = null;
+let keepAlive: { gain: GainNode; osc: OscillatorNode } | null = null;
+let keepAliveHolders = 0;
 
 function getAudioContext() {
   if (typeof window === "undefined" || !("AudioContext" in window)) return null;
@@ -10,25 +14,165 @@ function getAudioContext() {
   return sharedAudioContext;
 }
 
+/**
+ * Zvuk vede přes skrytý přehrávač stránky (media element), takže ho na iPhonu
+ * neztiší vypínač zvonění a přehrávání funguje i v nainstalované aplikaci.
+ */
+function getSink(ctx: AudioContext): AudioNode {
+  if (typeof document === "undefined" || typeof ctx.createMediaStreamDestination !== "function") {
+    return ctx.destination;
+  }
+  if (!sinkNode) {
+    try {
+      sinkNode = ctx.createMediaStreamDestination();
+    } catch {
+      return ctx.destination;
+    }
+  }
+  if (!sinkElement) {
+    const el = document.createElement("audio");
+    el.autoplay = true;
+    el.setAttribute("playsinline", "");
+    el.style.display = "none";
+    el.srcObject = sinkNode.stream;
+    document.body.appendChild(el);
+    sinkElement = el;
+  }
+  return sinkNode;
+}
+
+/** Drží zvukový kontext bdělý, dokud se čeká na hlas a než dozní čtení. */
+function holdAudioAwake(ctx: AudioContext) {
+  keepAliveHolders += 1;
+  if (!keepAlive) {
+    try {
+      const gain = ctx.createGain();
+      gain.gain.value = 0.0001;
+      gain.connect(getSink(ctx));
+      const osc = ctx.createOscillator();
+      osc.frequency.value = 30;
+      osc.connect(gain);
+      osc.start();
+      keepAlive = { gain, osc };
+    } catch {
+      keepAlive = null;
+    }
+  }
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    keepAliveHolders = Math.max(0, keepAliveHolders - 1);
+    if (keepAliveHolders === 0 && keepAlive) {
+      try {
+        keepAlive.osc.stop();
+      } catch {
+        // už zastaveno
+      }
+      keepAlive.gain.disconnect();
+      keepAlive = null;
+    }
+  };
+}
+
 /** Aktivuje zvuk přímo v obsluze dotyku, což vyžaduje hlavně iOS/PWA. */
 export function primeAudioPlayback() {
   const ctx = getAudioContext();
   if (!ctx) return Promise.resolve(false);
+  const sink = getSink(ctx);
   const resume = ctx.state === "suspended" ? ctx.resume() : Promise.resolve();
-  return resume.then(() => {
-    const source = ctx.createBufferSource();
-    source.buffer = ctx.createBuffer(1, 1, SAMPLE_RATE);
-    source.connect(ctx.destination);
-    source.start();
-    return ctx.state === "running";
-  }).catch(() => false);
+  const release = holdAudioAwake(ctx);
+  // Kdyby čtení nikdy nezačalo, po chvíli se tichý tón sám ukončí.
+  setTimeout(release, 90_000);
+  return resume
+    .then(() => {
+      void sinkElement?.play().catch(() => {});
+      const source = ctx.createBufferSource();
+      source.buffer = ctx.createBuffer(1, 1, SAMPLE_RATE);
+      source.connect(sink);
+      source.start();
+      return ctx.state === "running";
+    })
+    .catch(() => false);
 }
 
 /** Po návratu aplikace z pozadí znovu aktivuje již povolený zvuk. */
 export function resumeAudioPlayback() {
   const ctx = sharedAudioContext;
-  if (!ctx || ctx.state !== "suspended") return;
-  void ctx.resume().catch(() => {});
+  if (!ctx) return;
+  if (ctx.state === "suspended") void ctx.resume().catch(() => {});
+  void sinkElement?.play().catch(() => {});
+}
+
+/** Znovu probudí zvuk těsně před čtením; vrací, jestli může hrát. */
+async function ensurePlayable(ctx: AudioContext) {
+  if (ctx.state !== "running") {
+    await ctx.resume().catch(() => {});
+  }
+  await sinkElement?.play().catch(() => {});
+  return ctx.state === "running";
+}
+
+/**
+ * Záložní čtení vestavěným hlasem zařízení, když prohlížeč nepustí
+ * streamovaný zvuk (typicky iOS bez dalšího klepnutí).
+ */
+function speakWithDeviceVoice(text: string, options: { rate?: number; muted?: boolean } = {}): SpeakHandle {
+  const synth = typeof window !== "undefined" ? window.speechSynthesis : undefined;
+  let stopped = false;
+  let finish: () => void = () => {};
+  const done = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  if (!synth) {
+    return {
+      stop: () => {},
+      setRate: () => {},
+      setMuted: () => {},
+      scheduledSeconds: () => 0,
+      elapsedSeconds: () => 0,
+      done: Promise.reject(new Error("Tento prohlížeč nepodporuje předčítání.")),
+    };
+  }
+  const startedAt = Date.now();
+  const chunks = chunkText(sanitizeForSpeech(text), 60);
+  let rate = options.rate ?? 1;
+  let index = 0;
+  const speakNext = () => {
+    if (stopped || index >= chunks.length) {
+      finish();
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(chunks[index] ?? "");
+    index += 1;
+    utterance.lang = "cs-CZ";
+    utterance.rate = rate;
+    utterance.volume = options.muted ? 0 : 1;
+    const czech = synth.getVoices().find((voice) => voice.lang?.toLowerCase().startsWith("cs"));
+    if (czech) utterance.voice = czech;
+    utterance.onend = speakNext;
+    utterance.onerror = speakNext;
+    synth.speak(utterance);
+  };
+  synth.cancel();
+  speakNext();
+  return {
+    stop: () => {
+      stopped = true;
+      synth.cancel();
+      finish();
+    },
+    setRate: (next) => {
+      rate = next;
+    },
+    setMuted: (muted) => {
+      if (muted) synth.pause();
+      else synth.resume();
+    },
+    scheduledSeconds: () => 0,
+    elapsedSeconds: () => (Date.now() - startedAt) / 1000,
+    done,
+  };
 }
 
 async function readSpeechAudio(response: Response, onAudio: (bytes: Uint8Array) => void) {
@@ -112,7 +256,8 @@ export function speakBookPrecisely(
   if (!ctx) return null;
   const gain = ctx.createGain();
   gain.gain.value = options.muted ? 0 : 1;
-  gain.connect(ctx.destination);
+  gain.connect(getSink(ctx));
+  const releaseAwake = holdAudioAwake(ctx);
   const controller = new AbortController();
   const startSegment = Math.max(0, Math.min(options.startSegment ?? 0, segments.length - 1));
   const startChar = Math.max(0, options.startChar ?? 0);
@@ -202,7 +347,7 @@ export function speakBookPrecisely(
   };
 
   const done = (async () => {
-    if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+    await ensurePlayable(ctx);
     let nextAudio = groups[0] ? fetchPcm(groups[0].text) : null;
     for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
       const current = groups[groupIndex];
@@ -238,13 +383,14 @@ export function speakBookPrecisely(
     }
     const remaining = Math.max(0, playhead - ctx.currentTime);
     await new Promise<void>((resolve) => setTimeout(resolve, remaining * 1000 + 100));
-  })();
+  })().finally(releaseAwake);
 
   return {
     stop: () => {
       if (stopped) return;
       stopped = true;
       controller.abort();
+      releaseAwake();
       for (const timer of timers) clearTimeout(timer);
       for (const source of sources) {
         try {
@@ -364,7 +510,9 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
   }
   const gain = ctx.createGain();
   gain.gain.value = options.muted ? 0 : 1;
-  gain.connect(ctx.destination);
+  gain.connect(getSink(ctx));
+  const releaseAwake = holdAudioAwake(ctx);
+  let fallback: SpeakHandle | null = null;
 
   const controller = new AbortController();
   options.signal?.addEventListener("abort", () => controller.abort());
@@ -445,7 +593,18 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
   };
 
   const done = (async () => {
-    if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+    const playable = await ensurePlayable(ctx);
+    if (!playable) {
+      // Prohlížeč nepustí streamovaný zvuk – přečte to hlas zařízení.
+      if (stopped) return;
+      const handle = speakWithDeviceVoice(options.segments?.join(" ") || text, {
+        rate,
+        muted: options.muted ?? false,
+      });
+      fallback = handle;
+      await handle.done.catch(() => {});
+      return;
+    }
     const segments = options.segments;
     if (segments?.length) {
       const startIndex = Math.max(0, Math.min(options.startIndex ?? 0, segments.length - 1));
@@ -471,13 +630,14 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
     // dočkáme dohrání
     const remaining = Math.max(0, playhead - ctx.currentTime);
     await new Promise<void>((resolve) => setTimeout(resolve, remaining * 1000 + 120));
-  })();
+  })().finally(releaseAwake);
 
   return {
     stop: () => {
       if (stopped) return;
       stopped = true;
       controller.abort();
+      fallback?.stop();
       for (const t of timers) clearTimeout(t);
       for (const s of sources) {
         try {
@@ -487,10 +647,12 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
         }
       }
       gain.disconnect();
+      releaseAwake();
     },
 
     setRate: (next) => {
       rate = next;
+      fallback?.setRate(next);
       for (const s of sources) {
         try {
           s.playbackRate.value = next;
@@ -500,6 +662,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
       }
     },
     setMuted: (muted) => {
+      fallback?.setMuted(muted);
       gain.gain.value = muted ? 0 : 1;
     },
     scheduledSeconds: () => Math.max(0, playhead - startedAt),
