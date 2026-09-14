@@ -6,7 +6,7 @@ import { characters } from "@/data/characters";
 import { astras } from "@/data/astras";
 import { Page, PageHeader } from "@/components/Bits";
 import { askAi } from "@/lib/ask-ai";
-import { speak, type SpeakHandle } from "@/lib/speak";
+import { primeAudioPlayback, speak, type SpeakHandle } from "@/lib/speak";
 
 
 
@@ -79,6 +79,9 @@ function SearchPage() {
   const runSearch = (raw: string) => {
     const trimmed = raw.trim();
     if (trimmed.length < 2) return;
+    // Zvuk se aktivuje hned při kliknutí, aby se odpověď po vygenerování
+    // mohla sama přečíst (hlavně iOS/PWA blokuje zvuk bez gesta).
+    void primeAudioPlayback();
     // Každý dotaz se vždy hledá přes AI.
     abort.current?.abort();
     stopSpeech();
