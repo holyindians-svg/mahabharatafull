@@ -5,6 +5,7 @@ import {
   SYSTEM_PROMPT,
   buildCorpus,
 } from "@/lib/mahabharata-context.server";
+import { findAdiParvaPassages } from "@/lib/adi-parva-search.server";
 
 const BodySchema = z.object({
   /** Dotaz uživatele, nebo název položky pro předčítání. */
