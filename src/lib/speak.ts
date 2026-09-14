@@ -592,7 +592,18 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
   };
 
   const done = (async () => {
-    if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+    const playable = await ensurePlayable(ctx);
+    if (!playable) {
+      // Prohlížeč nepustí streamovaný zvuk – přečte to hlas zařízení.
+      if (stopped) return;
+      const handle = speakWithDeviceVoice(options.segments?.join(" ") || text, {
+        rate,
+        muted: options.muted,
+      });
+      fallback = handle;
+      await handle.done.catch(() => {});
+      return;
+    }
     const segments = options.segments;
     if (segments?.length) {
       const startIndex = Math.max(0, Math.min(options.startIndex ?? 0, segments.length - 1));
