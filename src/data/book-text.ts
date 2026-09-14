@@ -1,12 +1,18 @@
 import { narrationFor } from "./narrations";
 
 /**
- * Úplné české znění první knihy (Ádi Parva).
- *
- * Text je uložený přímo v aplikaci jako statický soubor
- * `public/texty/adi-parva.json` (pole odstavců v češtině). Načte se jednou
- * při otevření knihy a dál se nikam nedotazuje — žádný klíč, žádné čekání.
+ * Úplné české znění knih, které jsou v aplikaci uložené celé
+ * (`public/texty/<slug>.json` — pole odstavců v češtině). Text se načte
+ * jednou při otevření knihy a dál se nikam nedotazuje — žádný klíč,
+ * žádné čekání.
  */
+
+/** Knihy, u kterých je v aplikaci uložené úplné české znění. */
+export const FULL_TEXT_BOOKS = ["adi-parva", "sabha-parva"] as const;
+
+export function hasFullTextFor(slug: string): boolean {
+  return (FULL_TEXT_BOOKS as readonly string[]).includes(slug);
+}
 
 /** Rozdělí odstavec na věty, které se při čtení zvýrazňují. */
 function toSentences(paragraph: string): string[] {
