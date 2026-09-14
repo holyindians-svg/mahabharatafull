@@ -55,12 +55,6 @@ function toReadableParagraphs(paragraphs: string[], maxWords = 120): string[] {
 }
 
 
-/** Náhradní text, dokud se úplné znění nenačte. */
-export function adiParvaFallbackSegments(): string[] {
-  const fallback = narrationFor("parva", "adi-parva") ?? "";
-  return fallback.split(/\n{2,}/).flatMap(toSentences);
-}
-
 /** Ke každé větě index odstavce, do kterého patří. */
 export function paragraphIndexFor(paragraphs: string[]): number[] {
   const map: number[] = [];
@@ -70,16 +64,16 @@ export function paragraphIndexFor(paragraphs: string[]): number[] {
   return map;
 }
 
-export interface AdiParvaText {
+export interface BookText {
   segments: string[];
   /** paragraphIndex[i] = index odstavce pro větu i */
   paragraphIndex: number[];
 }
 
 /** Náhradní obsah, dokud se úplné znění nenačte. */
-export function adiParvaFallback(): AdiParvaText {
+export function bookFallback(slug: string): BookText {
   const paragraphs = toReadableParagraphs(
-    (narrationFor("parva", "adi-parva") ?? "").split(/\n{2,}/),
+    (narrationFor("parva", slug) ?? "").split(/\n{2,}/),
   );
   return {
     segments: paragraphs.flatMap(toSentences),
@@ -87,25 +81,28 @@ export function adiParvaFallback(): AdiParvaText {
   };
 }
 
-let cache: AdiParvaText | null = null;
+const cache = new Map<string, BookText>();
 
 /** Věty celé knihy v pořadí čtení, včetně rozdělení na odstavce. */
-export async function loadAdiParvaSegments(): Promise<AdiParvaText> {
-  if (cache) return cache;
+export async function loadBookSegments(slug: string): Promise<BookText> {
+  const cached = cache.get(slug);
+  if (cached) return cached;
   try {
-    const res = await fetch("/texty/adi-parva.json");
+    const res = await fetch(`/texty/${slug}.json`);
     if (!res.ok) throw new Error("nedostupné");
     const data = (await res.json()) as { paragraphs?: string[] };
     const sourceParagraphs = data.paragraphs ?? [];
     if (!sourceParagraphs.length) throw new Error("prázdné");
     const paragraphs = toReadableParagraphs(sourceParagraphs);
-    cache = {
+    const value: BookText = {
       segments: paragraphs.flatMap(toSentences),
       paragraphIndex: paragraphIndexFor(paragraphs),
     };
-    return cache;
+    cache.set(slug, value);
+    return value;
   } catch {
-    cache = adiParvaFallback();
-    return cache;
+    const value = bookFallback(slug);
+    cache.set(slug, value);
+    return value;
   }
 }
