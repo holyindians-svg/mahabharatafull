@@ -599,7 +599,7 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
       if (stopped) return;
       const handle = speakWithDeviceVoice(options.segments?.join(" ") || text, {
         rate,
-        muted: options.muted,
+        muted: options.muted ?? false,
       });
       fallback = handle;
       await handle.done.catch(() => {});
