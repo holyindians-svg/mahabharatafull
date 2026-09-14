@@ -121,12 +121,55 @@ async function loadPart(part: number, origin: string): Promise<Part | null> {
   }
 }
 
+/**
+ * Most mezi českým dotazem a anglickým Ganguliho překladem: k českému kmeni
+ * se přidají anglické podoby jmen a klíčových pojmů, aby se pasáže našly
+ * i v knihách 2–18.
+ */
+const BRIDGE: Record<string, string[]> = {
+  ardzun: ["arjun"], krisn: ["krishn", "vasudev"], judhisthir: ["yudhishthir"],
+  bhism: ["bhishm"], drona: ["drona"], dron: ["drona"], karn: ["karna"],
+  salj: ["shalya"], sakun: ["shakuni"], durjodhan: ["duryodhan"],
+  dusasan: ["dushasan", "duhshasan"], draupad: ["draupadi", "krishnaa"],
+  bhim: ["bhima", "bhimasena"], nakul: ["nakula"], sahadev: ["sahadeva"],
+  abhimanj: ["abhimanyu"], asvatthama: ["ashvatthama", "aswatthaman"],
+  satjak: ["satyaki"], dzajadrath: ["jayadratha"], vjas: ["vyasa"],
+  dhritarastr: ["dhritarashtra"], gandhar: ["gandhari"], vidur: ["vidura"],
+  kunt: ["kunti", "pritha"], pandu: ["pandu", "pandava"], panduovc: ["pandava"],
+  kaurav: ["kaurava", "kuru"], sikhand: ["shikhandi"], virat: ["virata"],
+  drupad: ["drupada"], ghatotkac: ["ghatotkacha"], hidimb: ["hidimba"],
+  kurukshetr: ["kurukshetra"], kuruksetr: ["kurukshetra"],
+  kostk: ["dice", "gambling"], hra: ["game", "dice"], sazk: ["stake", "wager"],
+  valk: ["war", "battle"], bitv: ["battle"], boj: ["battle", "fight"],
+  smrt: ["death", "slain"], zemrel: ["slain", "death"], zabil: ["slew", "slain"],
+  luk: ["bow"], sip: ["arrow"], zbran: ["weapon"], mec: ["sword"],
+  palic: ["mace"], vuz: ["chariot"], slon: ["elephant"], kun: ["horse", "steed"],
+  kral: ["king"], kralovn: ["queen"], syn: ["son"], bratr: ["brother"],
+  matk: ["mother"], otec: ["father"], zena: ["wife", "woman"],
+  kletb: ["curse"], obet: ["sacrifice"], nebe: ["heaven"], peklo: ["hell"],
+  bohov: ["gods", "celestials"], mudrc: ["sage", "rishi"], asket: ["ascetic"],
+  vyhnanstv: ["exile"], les: ["forest", "woods"], poust: ["hermitage"],
+  poucen: ["instruction", "duties"], moudrost: ["wisdom"], dharm: ["dharma", "duty"],
+  bhagavadgit: ["bhagavad", "krishna said"], git: ["bhagavad"],
+  osvobozen: ["emancipation"], joga: ["yoga"], mok: ["emancipation"],
+  odchod: ["departure", "journey"], pes: ["dog"], meru: ["meru", "himavat"],
+  dvarak: ["dvaraka", "dwaraka"], jaduovc: ["yadava", "vrishni"],
+};
+
 function keywords(question: string): string[] {
   const seen = new Set<string>();
+  const add = (word: string) => {
+    seen.add(word);
+    for (const [czech, english] of Object.entries(BRIDGE)) {
+      if (word.startsWith(czech) || czech.startsWith(word)) {
+        for (const value of english) seen.add(value);
+      }
+    }
+  };
   for (const word of normalize(question).split(/\s+/)) {
     if (word.length < 3 || STOPWORDS.has(word)) continue;
     // Krátký kmen, aby se chytily i jiné pádové tvary.
-    seen.add(word.length > 5 ? word.slice(0, word.length - 2) : word);
+    add(word.length > 5 ? word.slice(0, word.length - 2) : word);
   }
   return [...seen];
 }
