@@ -6,7 +6,12 @@ import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { narrationFor } from "@/data/narrations";
-import { adiParvaFallback, loadAdiParvaSegments, type AdiParvaText } from "@/data/adi-parva-text";
+import {
+  bookFallback,
+  hasFullTextFor,
+  loadBookSegments,
+  type BookText,
+} from "@/data/book-text";
 
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
 
@@ -39,21 +44,21 @@ function BookDetail() {
   const { parva } = Route.useLoaderData();
   const people = parva.characterSlugs.map(getCharacter).filter(Boolean);
   const next = parvas[parva.order % parvas.length]!;
-  const hasFullText = parva.slug === "adi-parva";
-  const [book, setBook] = useState<AdiParvaText | undefined>(
-    hasFullText ? adiParvaFallback() : undefined,
+  const hasFullText = hasFullTextFor(parva.slug);
+  const [book, setBook] = useState<BookText | undefined>(
+    hasFullText ? bookFallback(parva.slug) : undefined,
   );
 
   useEffect(() => {
     if (!hasFullText) return;
     let alive = true;
-    void loadAdiParvaSegments().then((s) => {
+    void loadBookSegments(parva.slug).then((s) => {
       if (alive) setBook(s);
     });
     return () => {
       alive = false;
     };
-  }, [hasFullText]);
+  }, [hasFullText, parva.slug]);
 
 
 
