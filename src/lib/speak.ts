@@ -256,7 +256,8 @@ export function speakBookPrecisely(
   if (!ctx) return null;
   const gain = ctx.createGain();
   gain.gain.value = options.muted ? 0 : 1;
-  gain.connect(ctx.destination);
+  gain.connect(getSink(ctx));
+  const releaseAwake = holdAudioAwake(ctx);
   const controller = new AbortController();
   const startSegment = Math.max(0, Math.min(options.startSegment ?? 0, segments.length - 1));
   const startChar = Math.max(0, options.startChar ?? 0);
@@ -346,7 +347,7 @@ export function speakBookPrecisely(
   };
 
   const done = (async () => {
-    if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+    await ensurePlayable(ctx);
     let nextAudio = groups[0] ? fetchPcm(groups[0].text) : null;
     for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
       const current = groups[groupIndex];
@@ -508,7 +509,9 @@ export function speak(text: string, options: SpeakOptions = {}): SpeakHandle {
   }
   const gain = ctx.createGain();
   gain.gain.value = options.muted ? 0 : 1;
-  gain.connect(ctx.destination);
+  gain.connect(getSink(ctx));
+  const releaseAwake = holdAudioAwake(ctx);
+  let fallback: SpeakHandle | null = null;
 
   const controller = new AbortController();
   options.signal?.addEventListener("abort", () => controller.abort());
