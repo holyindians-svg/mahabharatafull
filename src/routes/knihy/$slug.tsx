@@ -58,7 +58,7 @@ function BookDetail() {
     return () => {
       alive = false;
     };
-  }, [hasFullText]);
+  }, [hasFullText, parva.slug]);
 
 
 
