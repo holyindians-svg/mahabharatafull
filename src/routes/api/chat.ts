@@ -74,7 +74,10 @@ export const Route = createFileRoute("/api/chat")({
                 contents: [{ role: "user", parts: [{ text: userParts }] }],
                 generationConfig: {
                   temperature: 0.6,
-                  maxOutputTokens: body.mode === "narrate" ? 1600 : 900,
+                  maxOutputTokens: body.mode === "narrate" ? 1600 : 1200,
+                  // Bez vnitřního „přemýšlení“, aby se limit vyčerpal jen na odpověď
+                  // a odpověď nikdy nepřišla prázdná.
+                  thinkingConfig: { thinkingBudget: 0 },
                 },
               }),
               signal: request.signal,
