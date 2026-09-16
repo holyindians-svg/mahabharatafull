@@ -117,11 +117,11 @@ function failedHandle(message: string): SpeakHandle {
 }
 
 interface RunOptions {
-  rate?: number;
-  muted?: boolean;
-  signal?: AbortSignal;
-  onWord?: (boundary: WordBoundary) => void;
-  onSegment?: (index: number) => void;
+  rate?: number | undefined;
+  muted?: boolean | undefined;
+  signal?: AbortSignal | undefined;
+  onWord?: ((boundary: WordBoundary) => void) | undefined;
+  onSegment?: ((index: number) => void) | undefined;
 }
 
 /** Přečte připravené části za sebou a hlásí právě vyslovované slovo. */
@@ -158,8 +158,12 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
     utterance.rate = rate;
     utterance.pitch = 0.95;
     utterance.volume = muted ? 0 : 1;
-    const voice = pickVoice(synth);
-    if (voice) utterance.voice = voice;
+    try {
+      const voice = pickVoice(synth);
+      if (voice) utterance.voice = voice;
+    } catch {
+      // Když se hlas nedá nastavit, čte se výchozím hlasem zařízení.
+    }
 
     let pointer = -1;
     let usedBoundary = false;
