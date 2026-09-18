@@ -66,6 +66,34 @@ function BookDetail() {
     };
   }, [hasFullText, parva.slug]);
 
+  const showSections = SECTION_NAV_BOOKS.includes(parva.slug);
+  const sections = useMemo(
+    () => (showSections && book ? sectionsOf(book) : []),
+    [showSections, book],
+  );
+  const [selected, setSelected] = useState<number | null>(null);
+  const section = selected !== null ? sections[selected] : undefined;
+  const sectionBook = useMemo(() => {
+    if (!book || !section) return undefined;
+    const from = section.fromSegment;
+    const to = section.toSegment;
+    const base = book.paragraphIndex[from] ?? 0;
+    return {
+      segments: book.segments.slice(from, to + 1),
+      paragraphIndex: book.paragraphIndex.slice(from, to + 1).map((p) => p - base),
+    };
+  }, [book, section]);
+  const sectionMinutes = sectionBook
+    ? Math.max(
+        1,
+        Math.round(
+          sectionBook.segments.reduce((sum, s) => sum + (s.match(/\S+/g)?.length ?? 0), 0) / 140,
+        ),
+      )
+    : 1;
+
+
+
 
 
   return (
