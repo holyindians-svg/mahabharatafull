@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Scroll } from "lucide-react";
 import { getParva, parvas } from "@/data/parvas";
@@ -10,10 +10,16 @@ import {
   bookFallback,
   hasFullTextFor,
   loadBookSegments,
+  sectionsOf,
   type BookText,
 } from "@/data/book-text";
+import { cn } from "@/lib/utils";
 
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
+
+/** Knihy s klikatelným menu oddílů. */
+const SECTION_NAV_BOOKS = ["adi-parva"];
+
 
 
 export const Route = createFileRoute("/knihy/$slug")({
@@ -59,6 +65,34 @@ function BookDetail() {
       alive = false;
     };
   }, [hasFullText, parva.slug]);
+
+  const showSections = SECTION_NAV_BOOKS.includes(parva.slug);
+  const sections = useMemo(
+    () => (showSections && book ? sectionsOf(book) : []),
+    [showSections, book],
+  );
+  const [selected, setSelected] = useState<number | null>(null);
+  const section = selected !== null ? sections[selected] : undefined;
+  const sectionBook = useMemo(() => {
+    if (!book || !section) return undefined;
+    const from = section.fromSegment;
+    const to = section.toSegment;
+    const base = book.paragraphIndex[from] ?? 0;
+    return {
+      segments: book.segments.slice(from, to + 1),
+      paragraphIndex: book.paragraphIndex.slice(from, to + 1).map((p) => p - base),
+    };
+  }, [book, section]);
+  const sectionMinutes = sectionBook
+    ? Math.max(
+        1,
+        Math.round(
+          sectionBook.segments.reduce((sum, s) => sum + (s.match(/\S+/g)?.length ?? 0), 0) / 140,
+        ),
+      )
+    : 1;
+
+
 
 
 
@@ -117,6 +151,57 @@ function BookDetail() {
 
 
             />
+
+            {sections.length ? (
+              <div className="rounded-xl border border-border bg-surface/70 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Oddíly</p>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(null)}
+                    className={cn(
+                      "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                      selected === null
+                        ? "border-primary/60 bg-primary/15 text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Celá kniha
+                  </button>
+                </div>
+                <div className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+                  {sections.map((s, i) => (
+                    <button
+                      key={s.fromSegment}
+                      type="button"
+                      onClick={() => setSelected(i)}
+                      className={cn(
+                        "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
+                        selected === i
+                          ? "border-primary/60 bg-primary/15 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {s.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {section && sectionBook ? (
+              <AudioPlayer
+                key={`${parva.slug}-${section.fromSegment}`}
+                title={section.title}
+                subtitle={`${parva.name} · oddíl`}
+                minutes={sectionMinutes}
+                segments={sectionBook.segments}
+                paragraphIndex={sectionBook.paragraphIndex}
+                progressKey={`book:${parva.slug}:section:${section.fromSegment}`}
+              />
+            ) : null}
+
+
 
             <div className="rounded-xl border border-border bg-surface/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Zařazení</p>

@@ -70,6 +70,31 @@ export interface BookText {
   paragraphIndex: number[];
 }
 
+export interface BookSection {
+  /** Nadpis oddílu, např. „Oddíl I“. */
+  title: string;
+  /** První a poslední věta oddílu v `segments`. */
+  fromSegment: number;
+  toSegment: number;
+}
+
+const SECTION_HEADING = /^(oddíl|sekce)\s+[ivxlcdm]+\.?$/iu;
+
+/** Rozdělí knihu na oddíly podle nadpisů, které už v textu jsou. */
+export function sectionsOf(book: BookText): BookSection[] {
+  const sections: BookSection[] = [];
+  book.segments.forEach((segment, index) => {
+    if (SECTION_HEADING.test(segment.trim())) {
+      sections.push({ title: segment.trim(), fromSegment: index, toSegment: index });
+    } else {
+      const last = sections[sections.length - 1];
+      if (last) last.toSegment = index;
+    }
+  });
+  return sections;
+}
+
+
 /** Náhradní obsah, dokud se úplné znění nenačte. */
 export function bookFallback(slug: string): BookText {
   const paragraphs = toReadableParagraphs(
