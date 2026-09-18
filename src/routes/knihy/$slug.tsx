@@ -208,7 +208,10 @@ function BookDetail() {
                   <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Oddíly</p>
                   <button
                     type="button"
-                    onClick={() => setSelected(null)}
+                    onClick={() => {
+                      setSelected(null);
+                      setSelectedEvent(null);
+                    }}
                     className={cn(
                       "rounded-md border px-2.5 py-1 text-xs transition-colors",
                       selected === null
@@ -224,7 +227,10 @@ function BookDetail() {
                     <button
                       key={s.fromSegment}
                       type="button"
-                      onClick={() => setSelected(i)}
+                      onClick={() => {
+                        setSelected(i);
+                        setSelectedEvent(null);
+                      }}
                       className={cn(
                         "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
                         selected === i
