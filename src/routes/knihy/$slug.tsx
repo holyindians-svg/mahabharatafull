@@ -72,6 +72,11 @@ function BookDetail() {
     [showSections, book],
   );
   const [selected, setSelected] = useState<number | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
+  const eventText = selectedEvent !== null ? parva.events[selectedEvent] : undefined;
+  const eventMinutes = eventText
+    ? Math.max(1, Math.round((eventText.match(/\S+/g)?.length ?? 0) / 140))
+    : 1;
   const section = selected !== null ? sections[selected] : undefined;
   const sectionBook = useMemo(() => {
     if (!book || !section) return undefined;
@@ -125,17 +130,62 @@ function BookDetail() {
             <h3 className="mt-9 flex items-center gap-2 font-display text-lg">
               <Scroll className="size-4 text-primary" /> Klíčové události
             </h3>
-            <ol className="mt-4 space-y-3">
-              {parva.events.map((e, i) => (
-                <li
-                  key={e}
-                  className="flex gap-4 rounded-lg border border-border bg-surface/70 p-4 text-sm text-foreground/90"
+            {showSections && eventText !== undefined ? (
+              <div className="mt-4 space-y-4">
+                <div className="flex gap-4 rounded-lg border border-primary/60 bg-primary/10 p-4 text-sm text-foreground/90">
+                  <span className="font-display text-primary">
+                    {String((selectedEvent ?? 0) + 1).padStart(2, "0")}
+                  </span>
+                  <span className="leading-relaxed">{eventText}</span>
+                </div>
+                <AudioPlayer
+                  key={`${parva.slug}-event-${selectedEvent}`}
+                  title={`Klíčová událost ${(selectedEvent ?? 0) + 1}`}
+                  subtitle={`${parva.name} · klíčová událost`}
+                  minutes={eventMinutes}
+                  presetText={eventText}
+                />
+                <button
+                  type="button"
+                  onClick={() => setSelectedEvent(null)}
+                  className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  <span className="font-display text-primary">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="leading-relaxed">{e}</span>
-                </li>
-              ))}
-            </ol>
+                  Všechny klíčové události
+                </button>
+              </div>
+            ) : (
+              <ol className="mt-4 space-y-3">
+                {parva.events.map((e, i) =>
+                  showSections ? (
+                    <li key={e}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedEvent(i);
+                          setSelected(null);
+                        }}
+                        className="flex w-full gap-4 rounded-lg border border-border bg-surface/70 p-4 text-left text-sm text-foreground/90 transition-colors hover:border-primary/60"
+                      >
+                        <span className="font-display text-primary">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className="leading-relaxed">{e}</span>
+                      </button>
+                    </li>
+                  ) : (
+                    <li
+                      key={e}
+                      className="flex gap-4 rounded-lg border border-border bg-surface/70 p-4 text-sm text-foreground/90"
+                    >
+                      <span className="font-display text-primary">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="leading-relaxed">{e}</span>
+                    </li>
+                  ),
+                )}
+              </ol>
+            )}
           </div>
 
           <div className="order-1 space-y-6 lg:order-2">
