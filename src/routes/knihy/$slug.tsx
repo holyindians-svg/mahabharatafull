@@ -152,6 +152,57 @@ function BookDetail() {
 
             />
 
+            {sections.length ? (
+              <div className="rounded-xl border border-border bg-surface/70 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Oddíly</p>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(null)}
+                    className={cn(
+                      "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                      selected === null
+                        ? "border-primary/60 bg-primary/15 text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Celá kniha
+                  </button>
+                </div>
+                <div className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+                  {sections.map((s, i) => (
+                    <button
+                      key={s.fromSegment}
+                      type="button"
+                      onClick={() => setSelected(i)}
+                      className={cn(
+                        "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
+                        selected === i
+                          ? "border-primary/60 bg-primary/15 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {s.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {section && sectionBook ? (
+              <AudioPlayer
+                key={`${parva.slug}-${section.fromSegment}`}
+                title={section.title}
+                subtitle={`${parva.name} · oddíl`}
+                minutes={sectionMinutes}
+                segments={sectionBook.segments}
+                paragraphIndex={sectionBook.paragraphIndex}
+                progressKey={`book:${parva.slug}:section:${section.fromSegment}`}
+              />
+            ) : null}
+
+
+
             <div className="rounded-xl border border-border bg-surface/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Zařazení</p>
               <div className="mt-3 flex flex-wrap gap-2">
