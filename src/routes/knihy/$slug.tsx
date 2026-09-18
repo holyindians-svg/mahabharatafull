@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Scroll } from "lucide-react";
 import { getParva, parvas } from "@/data/parvas";
@@ -10,10 +10,16 @@ import {
   bookFallback,
   hasFullTextFor,
   loadBookSegments,
+  sectionsOf,
   type BookText,
 } from "@/data/book-text";
+import { cn } from "@/lib/utils";
 
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
+
+/** Knihy s klikatelným menu oddílů. */
+const SECTION_NAV_BOOKS = ["adi-parva"];
+
 
 
 export const Route = createFileRoute("/knihy/$slug")({
