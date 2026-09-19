@@ -78,7 +78,8 @@ export interface BookSection {
   toSegment: number;
 }
 
-const SECTION_HEADING = /^(oddíl|sekce)\s+([ivxlcdm]+|\d+)\.?$/iu;
+const SECTION_HEADING =
+  /^[#*\s]*(oddíl|sekce)\s+([ivxlcdm]+|\d+)\.?[*\s]*$/iu;
 
 /**
  * Přepíše nadpisy oddílů na arabské číslice podle skutečného pořadí v textu
