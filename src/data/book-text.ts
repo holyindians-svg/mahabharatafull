@@ -134,7 +134,7 @@ export async function loadBookSegments(slug: string): Promise<BookText> {
     const data = (await res.json()) as { paragraphs?: string[] };
     const sourceParagraphs = data.paragraphs ?? [];
     if (!sourceParagraphs.length) throw new Error("prázdné");
-    const paragraphs = toReadableParagraphs(sourceParagraphs);
+    const paragraphs = renumberSections(toReadableParagraphs(sourceParagraphs));
     const value: BookText = {
       segments: paragraphs.flatMap(toSentences),
       paragraphIndex: paragraphIndexFor(paragraphs),
