@@ -78,7 +78,23 @@ export interface BookSection {
   toSegment: number;
 }
 
-const SECTION_HEADING = /^(oddíl|sekce)\s+[ivxlcdm]+\.?$/iu;
+const SECTION_HEADING = /^(oddíl|sekce)\s+([ivxlcdm]+|\d+)\.?$/iu;
+
+/**
+ * Přepíše nadpisy oddílů na arabské číslice podle skutečného pořadí v textu
+ * („Oddíl 1“, „Oddíl 2“, …). Římská čísla ve zdroji nejsou spolehlivá, proto
+ * se čísluje průběžně — pořadí odstavců se nijak nemění.
+ */
+function renumberSections(paragraphs: string[]): string[] {
+  let n = 0;
+  return paragraphs.map((p) => {
+    if (SECTION_HEADING.test(p.trim())) {
+      n += 1;
+      return `Oddíl ${n}`;
+    }
+    return p;
+  });
+}
 
 /** Rozdělí knihu na oddíly podle nadpisů, které už v textu jsou. */
 export function sectionsOf(book: BookText): BookSection[] {
