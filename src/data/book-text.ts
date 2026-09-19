@@ -113,8 +113,8 @@ export function sectionsOf(book: BookText): BookSection[] {
 
 /** Náhradní obsah, dokud se úplné znění nenačte. */
 export function bookFallback(slug: string): BookText {
-  const paragraphs = toReadableParagraphs(
-    (narrationFor("parva", slug) ?? "").split(/\n{2,}/),
+  const paragraphs = renumberSections(
+    toReadableParagraphs((narrationFor("parva", slug) ?? "").split(/\n{2,}/)),
   );
   return {
     segments: paragraphs.flatMap(toSentences),
