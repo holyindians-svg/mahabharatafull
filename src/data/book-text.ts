@@ -78,7 +78,24 @@ export interface BookSection {
   toSegment: number;
 }
 
-const SECTION_HEADING = /^(oddíl|sekce)\s+[ivxlcdm]+\.?$/iu;
+const SECTION_HEADING =
+  /^[#*\s]*(oddíl|sekce)\s+([ivxlcdm]+|\d+)\.?[*\s]*$/iu;
+
+/**
+ * Přepíše nadpisy oddílů na arabské číslice podle skutečného pořadí v textu
+ * („Oddíl 1“, „Oddíl 2“, …). Římská čísla ve zdroji nejsou spolehlivá, proto
+ * se čísluje průběžně — pořadí odstavců se nijak nemění.
+ */
+function renumberSections(paragraphs: string[]): string[] {
+  let n = 0;
+  return paragraphs.map((p) => {
+    if (SECTION_HEADING.test(p.trim())) {
+      n += 1;
+      return `Oddíl ${n}`;
+    }
+    return p;
+  });
+}
 
 /** Rozdělí knihu na oddíly podle nadpisů, které už v textu jsou. */
 export function sectionsOf(book: BookText): BookSection[] {
@@ -97,8 +114,8 @@ export function sectionsOf(book: BookText): BookSection[] {
 
 /** Náhradní obsah, dokud se úplné znění nenačte. */
 export function bookFallback(slug: string): BookText {
-  const paragraphs = toReadableParagraphs(
-    (narrationFor("parva", slug) ?? "").split(/\n{2,}/),
+  const paragraphs = renumberSections(
+    toReadableParagraphs((narrationFor("parva", slug) ?? "").split(/\n{2,}/)),
   );
   return {
     segments: paragraphs.flatMap(toSentences),
@@ -118,7 +135,7 @@ export async function loadBookSegments(slug: string): Promise<BookText> {
     const data = (await res.json()) as { paragraphs?: string[] };
     const sourceParagraphs = data.paragraphs ?? [];
     if (!sourceParagraphs.length) throw new Error("prázdné");
-    const paragraphs = toReadableParagraphs(sourceParagraphs);
+    const paragraphs = renumberSections(toReadableParagraphs(sourceParagraphs));
     const value: BookText = {
       segments: paragraphs.flatMap(toSentences),
       paragraphIndex: paragraphIndexFor(paragraphs),
