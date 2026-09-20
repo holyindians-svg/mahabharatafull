@@ -125,60 +125,30 @@ function BookDetail() {
             <h3 className="mt-9 flex items-center gap-2 font-display text-lg">
               <Scroll className="size-4 text-primary" /> Klíčové události
             </h3>
-            {showSections && eventText !== undefined ? (
-              <div className="mt-4 space-y-4">
-                <div className="flex gap-4 rounded-lg border border-primary/60 bg-primary/10 p-4 text-sm text-foreground/90">
-                  <span className="font-display text-primary">
-                    {String((selectedEvent ?? 0) + 1).padStart(2, "0")}
-                  </span>
-                  <span className="leading-relaxed">{eventText}</span>
-                </div>
-                <AudioPlayer
-                  key={`${parva.slug}-event-${selectedEvent}`}
-                  title={`Klíčová událost ${(selectedEvent ?? 0) + 1}`}
-                  subtitle={`${parva.name} · klíčová událost`}
-                  minutes={eventMinutes}
-                  presetText={eventText}
-                />
-                <button
-                  type="button"
-                  onClick={() => setSelectedEvent(null)}
-                  className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Všechny klíčové události
-                </button>
-              </div>
+            {showSections ? (
+              <ul className="mt-4 space-y-4">
+                {parva.events.map((e, i) => (
+                  <li key={e} className="flex gap-4 py-1 text-sm text-foreground/90">
+                    <span className="font-display font-semibold text-primary">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="leading-relaxed">{e}</span>
+                  </li>
+                ))}
+              </ul>
             ) : (
               <ol className="mt-4 space-y-3">
-                {parva.events.map((e, i) =>
-                  showSections ? (
-                    <li key={e}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedEvent(i);
-                          setSelected(null);
-                        }}
-                        className="flex w-full gap-4 rounded-lg border border-border bg-surface/70 p-4 text-left text-sm text-foreground/90 transition-colors hover:border-primary/60"
-                      >
-                        <span className="font-display text-primary">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span className="leading-relaxed">{e}</span>
-                      </button>
-                    </li>
-                  ) : (
-                    <li
-                      key={e}
-                      className="flex gap-4 rounded-lg border border-border bg-surface/70 p-4 text-sm text-foreground/90"
-                    >
-                      <span className="font-display text-primary">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span className="leading-relaxed">{e}</span>
-                    </li>
-                  ),
-                )}
+                {parva.events.map((e, i) => (
+                  <li
+                    key={e}
+                    className="flex gap-4 rounded-lg border border-border bg-surface/70 p-4 text-sm text-foreground/90"
+                  >
+                    <span className="font-display text-primary">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="leading-relaxed">{e}</span>
+                  </li>
+                ))}
               </ol>
             )}
           </div>
