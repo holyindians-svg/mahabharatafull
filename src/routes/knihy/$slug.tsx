@@ -189,10 +189,7 @@ function BookDetail() {
                     <button
                       key={s.fromSegment}
                       type="button"
-                      onClick={() => {
-                        setSelected(i);
-                        setSelectedEvent(null);
-                      }}
+                      onClick={() => setSelected(i)}
                       className={cn(
                         "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
                         selected === i
