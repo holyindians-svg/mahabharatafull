@@ -72,11 +72,6 @@ function BookDetail() {
     [showSections, book],
   );
   const [selected, setSelected] = useState<number | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
-  const eventText = selectedEvent !== null ? parva.events[selectedEvent] : undefined;
-  const eventMinutes = eventText
-    ? Math.max(1, Math.round((eventText.match(/\S+/g)?.length ?? 0) / 140))
-    : 1;
   const section = selected !== null ? sections[selected] : undefined;
   const sectionBook = useMemo(() => {
     if (!book || !section) return undefined;
