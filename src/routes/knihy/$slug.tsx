@@ -173,10 +173,7 @@ function BookDetail() {
                   <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Oddíly</p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelected(null);
-                      setSelectedEvent(null);
-                    }}
+                    onClick={() => setSelected(null)}
                     className={cn(
                       "rounded-md border px-2.5 py-1 text-xs transition-colors",
                       selected === null
