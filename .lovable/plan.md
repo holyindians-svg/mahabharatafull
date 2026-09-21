@@ -2,9 +2,9 @@
 
 ## Stav nahraného textu
 
-Nahrané soubory teď obsahují český text druhé knihy pro sekce 5–66 a 68–76. Stále chybí sekce 1–4 a 67, takže kompletní výměna celé Sabhá Parvy zatím nejde dokončit bez mezery.
+Nahrané soubory teď obsahují český text druhé knihy pro sekce 1–66 a 68–76. Stále chybí sekce 67, takže kompletní výměna celé Sabhá Parvy zatím nejde dokončit bez mezery.
 
-## Co udělám po dodání chybějících sekcí
+## Co udělám po dodání chybějící sekce
 
 - Složím všechny dodané části druhé knihy do jednoho souvislého textu ve správném pořadí sekcí.
 - Nahradím starý text druhé knihy novým českým textem v souboru pro čtení i ve zdroji, který používá lupa.
@@ -28,4 +28,4 @@ Nahrané soubory teď obsahují český text druhé knihy pro sekce 5–66 a 68�
 
 ## Čeká se na vás
 
-Pošlete prosím ještě chybějící sekce 1–4 a 67 druhé knihy. Jakmile budou nahrané, můžu plán provést kompletně bez ponechání anglických nebo chybějících částí.
+Pošlete prosím ještě chybějící sekci 67 druhé knihy. Jakmile bude nahraná, můžu plán provést kompletně bez ponechání anglických nebo chybějících částí.
