@@ -124,6 +124,15 @@ interface RunOptions {
   onSegment?: ((index: number) => void) | undefined;
 }
 
+/**
+ * Upraví text tak, aby ho hlas přečetl přirozeně: dlouhé „ó“ některé hlasy
+ * vyslovují jako „o s čárkou“. Záměna je znak za znak, takže pozice slov
+ * pro zvýrazňování textu na stránce zůstávají stejné. Zobrazený text se nemění.
+ */
+function forVoice(text: string): string {
+  return text.replace(/ó/g, "o").replace(/Ó/g, "O");
+}
+
 /** Přečte připravené části za sebou a hlásí právě vyslovované slovo. */
 function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
   const synth = getSynth();
@@ -153,7 +162,7 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
       finish();
       return;
     }
-    const utterance = new SpeechSynthesisUtterance(item.text);
+    const utterance = new SpeechSynthesisUtterance(forVoice(item.text));
     utterance.lang = "cs-CZ";
     utterance.rate = rate;
     utterance.pitch = 0.95;
