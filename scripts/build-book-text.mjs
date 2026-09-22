@@ -44,6 +44,7 @@ const SUBPARVA_LABEL = {
   arjunabhigamana: "Ardžunábhigamana Parva",
   indralokabhigamana: "Indralókábhigamana Parva",
   nalopakhyana: "Nalópákhjána Parva",
+  indralokagamana: "Indralókágamana Parva",
   tirthayatraparva: "Tírthajátrá Parva",
   nivatakavachayuddha: "Nivátakavača Parva",
   brihadaranyaka: "Brhadáranjaka Parva",
