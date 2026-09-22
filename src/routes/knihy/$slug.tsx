@@ -11,6 +11,7 @@ import {
   hasFullTextFor,
   loadBookSegments,
   sectionsOf,
+  type BookSection,
   type BookText,
 } from "@/data/book-text";
 import { cn } from "@/lib/utils";
@@ -68,9 +69,20 @@ function BookDetail() {
 
   const showSections = SECTION_NAV_BOOKS.includes(parva.slug);
   const sections = useMemo(
-    () => (showSections && book ? sectionsOf(book) : []),
-    [showSections, book],
+    () => (showSections && book ? sectionsOf(book, parva.slug) : []),
+    [showSections, book, parva.slug],
   );
+  const hasGroups = sections.length > 0 && sections.some((s) => s.group);
+  const sectionGroups = useMemo(() => {
+    const groups: { name: string; items: { s: BookSection; i: number }[] }[] = [];
+    sections.forEach((s, i) => {
+      const name = s.group ?? "";
+      const last = groups[groups.length - 1];
+      if (last && last.name === name) last.items.push({ s, i });
+      else groups.push({ name, items: [{ s, i }] });
+    });
+    return groups;
+  }, [sections]);
   const [selected, setSelected] = useState<number | null>(null);
   const section = selected !== null ? sections[selected] : undefined;
   const sectionBook = useMemo(() => {
@@ -184,23 +196,52 @@ function BookDetail() {
                     Celá kniha
                   </button>
                 </div>
-                <div className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
-                  {sections.map((s, i) => (
-                    <button
-                      key={s.fromSegment}
-                      type="button"
-                      onClick={() => setSelected(i)}
-                      className={cn(
-                        "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
-                        selected === i
-                          ? "border-primary/60 bg-primary/15 text-primary"
-                          : "border-border text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {s.title}
-                    </button>
-                  ))}
-                </div>
+                {hasGroups ? (
+                  <div className="mt-3 max-h-[26rem] space-y-5 overflow-y-auto pr-1">
+                    {sectionGroups.map((g) => (
+                      <div key={g.name}>
+                        <p className="mb-2.5 font-display text-sm font-semibold text-foreground">
+                          {g.name}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                          {g.items.map(({ s, i }) => (
+                            <button
+                              key={s.fromSegment}
+                              type="button"
+                              onClick={() => setSelected(i)}
+                              className={cn(
+                                "truncate rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors",
+                                selected === i
+                                  ? "border-primary/60 bg-primary/15 text-primary"
+                                  : "border-border text-muted-foreground hover:text-foreground",
+                              )}
+                            >
+                              {s.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+                    {sections.map((s, i) => (
+                      <button
+                        key={s.fromSegment}
+                        type="button"
+                        onClick={() => setSelected(i)}
+                        className={cn(
+                          "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
+                          selected === i
+                            ? "border-primary/60 bg-primary/15 text-primary"
+                            : "border-border text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {s.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : null}
 

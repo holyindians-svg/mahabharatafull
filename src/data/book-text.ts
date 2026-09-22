@@ -76,6 +76,8 @@ export interface BookSection {
   /** První a poslední věta oddílu v `segments`. */
   fromSegment: number;
   toSegment: number;
+  /** Název podkapitoly (jen u knih s podnázvy, např. Ádi Parva). */
+  group?: string;
 }
 
 const SECTION_HEADING =
@@ -97,15 +99,80 @@ function renumberSections(paragraphs: string[]): string[] {
   });
 }
 
+/** Knihy, u kterých se v seznamu oddílů seskupují podle podkapitol. */
+const SECTION_GROUP_BOOKS = ["adi-parva"];
+
+/** Kanonické názvy podkapitol Ádi Parvy pro zobrazení. */
+const SUBPARVA_DEFAULT = "Parvasamgraha";
+const SUBPARVA_CANON: Record<string, string> = {
+  pausja: "Paušja",
+  pauloma: "Paulóma",
+  astika: "Ástika",
+  adivansavatarana: "Ádivanšávatárana",
+  sambhava: "Sambhava",
+  dzatugriha: "Džatugriha",
+  hidimbavadha: "Hidimbavadha",
+  vakavadha: "Vákavadha",
+  caitraratha: "Čaitraratha",
+  svajamvara: "Svajamvara",
+  vaivahika: "Vaiváhika",
+  viduragamana: "Vidurágamana",
+  radzjalabha: "Rádžja-lábha",
+  ardzunavanavasa: "Ardžunavanavása",
+  ardzununvanavasa: "Ardžunavanavása",
+  subhadraharana: "Subhádraharana",
+  haranaharana: "Haranaharana",
+  khandavadaha: "Khandavadaha",
+};
+
+/** Sjednocený klíč názvu: bez diakritiky, mezer, pomlček a interpunkce. */
+function normalizeNameKey(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[-\s]+/g, "");
+}
+
+/** Podnázev podkapitoly z odstavce tvaru „(Paušja Parva)“ — bez „pokračování“. */
+function subparvaKeyFrom(text: string): string | undefined {
+  const match = /^\(([^()]{2,60})\)$/.exec(text.trim());
+  if (!match) return undefined;
+  const inner = match[1]!;
+  if (!/\bparva\b/i.test(inner)) return undefined;
+  const name = inner
+    .replace(/pokrač\w*/gi, "")
+    .replace(/\s*parva\s*$/i, "")
+    .replace(/[.,;:!?*]+$/g, "")
+    .trim();
+  if (!name) return undefined;
+  return normalizeNameKey(name);
+}
+
 /** Rozdělí knihu na oddíly podle nadpisů, které už v textu jsou. */
-export function sectionsOf(book: BookText): BookSection[] {
+export function sectionsOf(book: BookText, slug?: string): BookSection[] {
+  const withGroups = !!slug && SECTION_GROUP_BOOKS.includes(slug);
   const sections: BookSection[] = [];
+  let currentGroup = SUBPARVA_DEFAULT;
   book.segments.forEach((segment, index) => {
+    if (withGroups) {
+      const key = subparvaKeyFrom(segment);
+      const canon = key ? SUBPARVA_CANON[key] : undefined;
+      if (canon) currentGroup = canon;
+    }
     if (SECTION_HEADING.test(segment.trim())) {
-      sections.push({ title: segment.trim(), fromSegment: index, toSegment: index });
+      sections.push({
+        title: segment.trim(),
+        fromSegment: index,
+        toSegment: index,
+        ...(withGroups ? { group: currentGroup } : {}),
+      });
     } else {
       const last = sections[sections.length - 1];
-      if (last) last.toSegment = index;
+      if (last) {
+        last.toSegment = index;
+        if (withGroups) last.group = currentGroup;
+      }
     }
   });
   return sections;
