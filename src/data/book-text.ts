@@ -8,7 +8,7 @@ import { narrationFor } from "./narrations";
  */
 
 /** Knihy, u kterých je v aplikaci uložené úplné české znění. */
-export const FULL_TEXT_BOOKS = ["adi-parva", "sabha-parva"] as const;
+export const FULL_TEXT_BOOKS = ["adi-parva", "sabha-parva", "vana-parva"] as const;
 
 export function hasFullTextFor(slug: string): boolean {
   return (FULL_TEXT_BOOKS as readonly string[]).includes(slug);
@@ -100,12 +100,13 @@ function renumberSections(paragraphs: string[]): string[] {
 }
 
 /** Knihy, u kterých se v seznamu oddílů seskupují podle podkapitol. */
-const SECTION_GROUP_BOOKS = ["adi-parva", "sabha-parva"];
+const SECTION_GROUP_BOOKS = ["adi-parva", "sabha-parva", "vana-parva"];
 
 /** Výchozí nadpis před prvním podnázvem každé tematicky členěné knihy. */
 const SUBPARVA_DEFAULT: Record<string, string> = {
   "adi-parva": "Parvasamgraha",
   "sabha-parva": "Sabhá Parva",
+  "vana-parva": "Vana Parva",
 };
 
 /** Kanonické názvy podkapitol pro zobrazení. */
@@ -142,7 +143,7 @@ function normalizeNameKey(name: string): string {
 }
 
 /** Podnázev podkapitoly z odstavce tvaru „(Paušja Parva)“ — bez „pokračování“. */
-function subparvaKeyFrom(text: string): string | undefined {
+function subparvaNameFrom(text: string): string | undefined {
   const match = /^\(([^()]{2,60})\)$/.exec(text.trim());
   if (!match) return undefined;
   const inner = match[1];
@@ -154,7 +155,7 @@ function subparvaKeyFrom(text: string): string | undefined {
     .replace(/[.,;:!?*]+$/g, "")
     .trim();
   if (!name) return undefined;
-  return normalizeNameKey(name);
+  return name;
 }
 
 /** Rozdělí knihu na oddíly podle nadpisů, které už v textu jsou. */
@@ -164,9 +165,11 @@ export function sectionsOf(book: BookText, slug?: string): BookSection[] {
   let currentGroup = (slug && SUBPARVA_DEFAULT[slug]) || "";
   book.segments.forEach((segment, index) => {
     if (withGroups) {
-      const key = subparvaKeyFrom(segment);
-      const canon = key ? SUBPARVA_CANON[key] : undefined;
-      if (canon) currentGroup = canon;
+      const name = subparvaNameFrom(segment);
+      if (name) {
+        currentGroup =
+          SUBPARVA_CANON[normalizeNameKey(name)] ?? `${name} Parva`;
+      }
     }
     if (SECTION_HEADING.test(segment.trim())) {
       sections.push({

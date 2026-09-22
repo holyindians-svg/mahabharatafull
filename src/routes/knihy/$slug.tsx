@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
 
 /** Knihy s klikatelným menu oddílů. */
-const SECTION_NAV_BOOKS = ["adi-parva", "sabha-parva"];
+const SECTION_NAV_BOOKS = ["adi-parva", "sabha-parva", "vana-parva"];
 
 /** Krátký popisek tlačítka oddílu v tematicky seskupeném seznamu. */
 function shortLabel(title: string): string {
