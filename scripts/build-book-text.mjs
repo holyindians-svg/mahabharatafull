@@ -39,6 +39,14 @@ const SUBPARVA_LABEL = {
   draupadiharana: "Draupadíharana Parva",
   kundalaharana: "Kundalaharana Parva",
   araneya: "Áranéja Parva",
+  kirmirabadha: "Kirmíravadha Parva",
+  kirmiravadha: "Kirmíravadha Parva",
+  arjunabhigamana: "Ardžunábhigamana Parva",
+  indralokabhigamana: "Indralókábhigamana Parva",
+  nalopakhyana: "Nalópákhjána Parva",
+  tirthayatraparva: "Tírthajátrá Parva",
+  nivatakavachayuddha: "Nivátakavača Parva",
+  brihadaranyaka: "Brhadáranjaka Parva",
 };
 
 function key(name) {
