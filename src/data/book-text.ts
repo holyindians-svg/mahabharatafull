@@ -76,6 +76,8 @@ export interface BookSection {
   /** První a poslední věta oddílu v `segments`. */
   fromSegment: number;
   toSegment: number;
+  /** Název podkapitoly (jen u knih s podnázvy, např. Ádi Parva). */
+  group?: string;
 }
 
 const SECTION_HEADING =
