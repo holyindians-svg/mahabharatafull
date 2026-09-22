@@ -155,6 +155,11 @@ export function sectionsOf(book: BookText, slug?: string): BookSection[] {
   const sections: BookSection[] = [];
   let currentGroup = SUBPARVA_DEFAULT;
   book.segments.forEach((segment, index) => {
+    if (withGroups) {
+      const key = subparvaKeyFrom(segment);
+      const canon = key ? SUBPARVA_CANON[key] : undefined;
+      if (canon) currentGroup = canon;
+    }
     if (SECTION_HEADING.test(segment.trim())) {
       sections.push({
         title: segment.trim(),
@@ -168,11 +173,6 @@ export function sectionsOf(book: BookText, slug?: string): BookSection[] {
         last.toSegment = index;
         if (withGroups) last.group = currentGroup;
       }
-    }
-    if (withGroups) {
-      const key = subparvaKeyFrom(segment);
-      const canon = key ? SUBPARVA_CANON[key] : undefined;
-      if (canon) currentGroup = canon;
     }
   });
   return sections;
