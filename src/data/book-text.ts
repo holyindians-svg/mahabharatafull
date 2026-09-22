@@ -76,7 +76,7 @@ export interface BookSection {
   /** První a poslední věta oddílu v `segments`. */
   fromSegment: number;
   toSegment: number;
-  /** Název podkapitoly (jen u knih s podnázvy, např. Ádi Parva). */
+  /** Název podkapitoly u knih s tematicky členěným menu. */
   group?: string;
 }
 
@@ -100,10 +100,15 @@ function renumberSections(paragraphs: string[]): string[] {
 }
 
 /** Knihy, u kterých se v seznamu oddílů seskupují podle podkapitol. */
-const SECTION_GROUP_BOOKS = ["adi-parva"];
+const SECTION_GROUP_BOOKS = ["adi-parva", "sabha-parva"];
 
-/** Kanonické názvy podkapitol Ádi Parvy pro zobrazení. */
-const SUBPARVA_DEFAULT = "Parvasamgraha";
+/** Výchozí nadpis před prvním podnázvem každé tematicky členěné knihy. */
+const SUBPARVA_DEFAULT: Record<string, string> = {
+  "adi-parva": "Parvasamgraha",
+  "sabha-parva": "Sabhá Parva",
+};
+
+/** Kanonické názvy podkapitol pro zobrazení. */
 const SUBPARVA_CANON: Record<string, string> = {
   pausja: "Paušja",
   pauloma: "Paulóma",
@@ -123,6 +128,8 @@ const SUBPARVA_CANON: Record<string, string> = {
   subhadraharana: "Subhádraharana",
   haranaharana: "Haranaharana",
   khandavadaha: "Khandavadaha",
+  digvidzaja: "Digvidžaja Parva",
+  arghjaharana: "Arghjaharana Parva",
 };
 
 /** Sjednocený klíč názvu: bez diakritiky, mezer, pomlček a interpunkce. */
@@ -138,7 +145,8 @@ function normalizeNameKey(name: string): string {
 function subparvaKeyFrom(text: string): string | undefined {
   const match = /^\(([^()]{2,60})\)$/.exec(text.trim());
   if (!match) return undefined;
-  const inner = match[1]!;
+  const inner = match[1];
+  if (!inner) return undefined;
   if (!/\bparva\b/i.test(inner)) return undefined;
   const name = inner
     .replace(/pokrač\w*/gi, "")
@@ -153,7 +161,7 @@ function subparvaKeyFrom(text: string): string | undefined {
 export function sectionsOf(book: BookText, slug?: string): BookSection[] {
   const withGroups = !!slug && SECTION_GROUP_BOOKS.includes(slug);
   const sections: BookSection[] = [];
-  let currentGroup = SUBPARVA_DEFAULT;
+  let currentGroup = (slug && SUBPARVA_DEFAULT[slug]) || "";
   book.segments.forEach((segment, index) => {
     if (withGroups) {
       const key = subparvaKeyFrom(segment);

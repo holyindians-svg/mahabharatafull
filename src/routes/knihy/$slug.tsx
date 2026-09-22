@@ -21,7 +21,7 @@ import { BackLink, Chip, Page, Section } from "@/components/Bits";
 /** Knihy s klikatelným menu oddílů. */
 const SECTION_NAV_BOOKS = ["adi-parva", "sabha-parva"];
 
-/** Krátký popisek tlačítka oddílu (jen u seskupeného seznamu 1. knihy). */
+/** Krátký popisek tlačítka oddílu v tematicky seskupeném seznamu. */
 function shortLabel(title: string): string {
   const n = /(\d+)/.exec(title);
   return n ? `od. ${n[1]}` : title;
