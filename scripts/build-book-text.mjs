@@ -80,11 +80,26 @@ const files = readdirSync(srcDir)
 const paragraphs = [];
 let lastGroup = null;
 
+const SUBPARVA_LINE = /^([^()]{2,60}?)\s*parva\b[^()]*(\((?:sekce|oddíl)[^()]*\))?\s*$/i;
+
 for (const { text } of files) {
-  const blocks = text
+  // Nadpisy oddílů a názvy podkapitol osamostatníme na vlastní blok.
+  const prepared = text
+    .split(/\r?\n/)
+    .map((line) => {
+      const t = line.trim();
+      if (HEADING.test(t) || (SUBPARVA_LINE.test(t) && t.length < 80)) {
+        return `\n${t}\n`;
+      }
+      return line;
+    })
+    .join("\n");
+
+  const blocks = prepared
     .split(/\r?\n\s*\r?\n/)
     .map((b) => b.replace(/\s+/g, " ").trim())
     .filter(Boolean);
+
 
   for (const block of blocks) {
     // Titul celé knihy přeskočíme.
