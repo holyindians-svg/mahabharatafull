@@ -129,6 +129,13 @@ const SUBPARVA_CANON: Record<string, string> = {
   subhadraharana: "Subhádraharana",
   haranaharana: "Haranaharana",
   khandavadaha: "Khandavadaha",
+  jatugriha: "Džatugriha",
+  hidimvavadha: "Hidimbavadha",
+  hidimbavadha2: "Hidimbavadha",
+  vakavadha2: "Vákavadha",
+  svajamvary: "Svajamvara",
+  ardzunuvvanavasa: "Ardžunavanavása",
+  subhadraharana2: "Subhádraharana",
   digvidzaja: "Digvidžaja Parva",
   arghjaharana: "Arghjaharana Parva",
 };
@@ -152,7 +159,7 @@ function subparvaNameFrom(text: string): string | undefined {
   const name = inner
     .replace(/pokra[čc]\p{L}*/giu, "")
     .replace(/[.,;:!?*]+/g, " ")
-    .replace(/\s*parva\s*/gi, " ")
+    .replace(/parv\p{L}*/giu, " ")
     .replace(/\s+/g, " ")
     .trim();
 
