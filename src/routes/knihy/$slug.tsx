@@ -21,6 +21,12 @@ import { BackLink, Chip, Page, Section } from "@/components/Bits";
 /** Knihy s klikatelným menu oddílů. */
 const SECTION_NAV_BOOKS = ["adi-parva", "sabha-parva"];
 
+/** Krátký popisek tlačítka oddílu (jen u seskupeného seznamu 1. knihy). */
+function shortLabel(title: string): string {
+  const n = /(\d+)/.exec(title);
+  return n ? `od. ${n[1]}` : title;
+}
+
 
 
 export const Route = createFileRoute("/knihy/$slug")({
@@ -213,10 +219,10 @@ function BookDetail() {
                                 "truncate rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors",
                                 selected === i
                                   ? "border-primary/60 bg-primary/15 text-primary"
-                                  : "border-border text-muted-foreground hover:text-foreground",
+                                : "border-border text-muted-foreground hover:text-foreground",
                               )}
                             >
-                              {s.title}
+                              {shortLabel(s.title)}
                             </button>
                           ))}
                         </div>
