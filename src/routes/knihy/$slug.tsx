@@ -11,6 +11,7 @@ import {
   hasFullTextFor,
   loadBookSegments,
   sectionsOf,
+  type BookSection,
   type BookText,
 } from "@/data/book-text";
 import { cn } from "@/lib/utils";
@@ -68,9 +69,20 @@ function BookDetail() {
 
   const showSections = SECTION_NAV_BOOKS.includes(parva.slug);
   const sections = useMemo(
-    () => (showSections && book ? sectionsOf(book) : []),
-    [showSections, book],
+    () => (showSections && book ? sectionsOf(book, parva.slug) : []),
+    [showSections, book, parva.slug],
   );
+  const hasGroups = sections.length > 0 && sections.some((s) => s.group);
+  const sectionGroups = useMemo(() => {
+    const groups: { name: string; items: { s: BookSection; index: number }[] }[] = [];
+    sections.forEach((s, i) => {
+      const name = s.group ?? "";
+      const last = groups[groups.length - 1];
+      if (last && last.name === name) last.items.push({ s, i });
+      else groups.push({ name, items: [{ s, i }] });
+    });
+    return groups;
+  }, [sections]);
   const [selected, setSelected] = useState<number | null>(null);
   const section = selected !== null ? sections[selected] : undefined;
   const sectionBook = useMemo(() => {
