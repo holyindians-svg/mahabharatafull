@@ -196,23 +196,52 @@ function BookDetail() {
                     Celá kniha
                   </button>
                 </div>
-                <div className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
-                  {sections.map((s, i) => (
-                    <button
-                      key={s.fromSegment}
-                      type="button"
-                      onClick={() => setSelected(i)}
-                      className={cn(
-                        "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
-                        selected === i
-                          ? "border-primary/60 bg-primary/15 text-primary"
-                          : "border-border text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {s.title}
-                    </button>
-                  ))}
-                </div>
+                {hasGroups ? (
+                  <div className="mt-3 max-h-[26rem] space-y-5 overflow-y-auto pr-1">
+                    {sectionGroups.map((g) => (
+                      <div key={g.name}>
+                        <p className="mb-2.5 font-display text-sm font-semibold text-foreground">
+                          {g.name}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                          {g.items.map(({ s, i }) => (
+                            <button
+                              key={s.fromSegment}
+                              type="button"
+                              onClick={() => setSelected(i)}
+                              className={cn(
+                                "truncate rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors",
+                                selected === i
+                                  ? "border-primary/60 bg-primary/15 text-primary"
+                                  : "border-border text-muted-foreground hover:text-foreground",
+                              )}
+                            >
+                              {s.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+                    {sections.map((s, i) => (
+                      <button
+                        key={s.fromSegment}
+                        type="button"
+                        onClick={() => setSelected(i)}
+                        className={cn(
+                          "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
+                          selected === i
+                            ? "border-primary/60 bg-primary/15 text-primary"
+                            : "border-border text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {s.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : null}
 
