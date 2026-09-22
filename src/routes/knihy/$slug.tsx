@@ -74,7 +74,7 @@ function BookDetail() {
   );
   const hasGroups = sections.length > 0 && sections.some((s) => s.group);
   const sectionGroups = useMemo(() => {
-    const groups: { name: string; items: { s: BookSection; index: number }[] }[] = [];
+    const groups: { name: string; items: { s: BookSection; i: number }[] }[] = [];
     sections.forEach((s, i) => {
       const name = s.group ?? "";
       const last = groups[groups.length - 1];
