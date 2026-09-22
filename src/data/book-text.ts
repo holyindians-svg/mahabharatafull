@@ -150,10 +150,12 @@ function subparvaNameFrom(text: string): string | undefined {
   if (!inner) return undefined;
   if (!/\bparva\b/i.test(inner)) return undefined;
   const name = inner
-    .replace(/pokrač\w*/gi, "")
-    .replace(/\s*parva\s*$/i, "")
-    .replace(/[.,;:!?*]+$/g, "")
+    .replace(/pokra[čc]\p{L}*/giu, "")
+    .replace(/[.,;:!?*]+/g, " ")
+    .replace(/\s*parva\s*/gi, " ")
+    .replace(/\s+/g, " ")
     .trim();
+
   if (!name) return undefined;
   return name;
 }
