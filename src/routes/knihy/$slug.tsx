@@ -252,8 +252,7 @@ function BookDetail() {
                               key={s.fromSegment}
                               type="button"
                               data-section={i}
-                              data-section={i}
-                        onClick={() => setSelected(i)}
+                              onClick={() => setSelected(i)}
                               className={cn(
                                 "truncate rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors",
                                 highlighted === i
