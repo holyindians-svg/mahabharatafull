@@ -68,6 +68,16 @@ function ReadingBooksPage() {
   const [books, setBooks] = useState<ReadingBook[]>([]);
   const [openSection, setOpenSection] = useState<OpenSection | null>(null);
 
+  const [textVersion, setTextVersion] = useState(0);
+  useEffect(
+    () =>
+      onBookUpdated((slug) => {
+        forgetBook(slug);
+        setTextVersion((v) => v + 1);
+      }),
+    [],
+  );
+
   useEffect(() => {
     let alive = true;
     void Promise.all(
@@ -89,7 +99,7 @@ function ReadingBooksPage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [textVersion]);
 
   useEffect(() => {
     if (!openSection) return;

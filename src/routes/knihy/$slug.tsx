@@ -62,6 +62,17 @@ function BookDetail() {
     hasFullText ? bookFallback(parva.slug) : undefined,
   );
 
+  const [textVersion, setTextVersion] = useState(0);
+  useEffect(
+    () =>
+      onBookUpdated((slug) => {
+        if (slug !== parva.slug) return;
+        forgetBook(slug);
+        setTextVersion((v) => v + 1);
+      }),
+    [parva.slug],
+  );
+
   useEffect(() => {
     if (!hasFullText) return;
     let alive = true;
@@ -71,7 +82,7 @@ function BookDetail() {
     return () => {
       alive = false;
     };
-  }, [hasFullText, parva.slug]);
+  }, [hasFullText, parva.slug, textVersion]);
 
   const showSections = SECTION_NAV_BOOKS.includes(parva.slug);
   const sections = useMemo(
