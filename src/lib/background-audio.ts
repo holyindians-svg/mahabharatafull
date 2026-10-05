@@ -92,27 +92,18 @@ export function noteSpeechActivity() {
  * nepovolí). Volat synchronně v obsluze kliknutí na Přehrát.
  */
 export function primeBackgroundAudio() {
-  const el = getAudio();
-  if (!el) return;
-  try {
-    void el.play().catch((e: unknown) => console.log("[tts] tichý zvuk zablokován", e));
-  } catch {
-    // nic
-  }
+  // Tichá smyčka na telefonech přebírá zvukový kanál a hlas pak není slyšet,
+  // proto se nespouští. (Funkce zůstává kvůli volajícímu kódu.)
+  void getAudio;
 }
 
 function nudgeSpeech() {
   if (!active || typeof window === "undefined" || !("speechSynthesis" in window)) return;
   const synth = window.speechSynthesis;
   try {
-    if (synth.paused || (synth.pending && !synth.speaking)) {
-      console.log("[tts] watchdog: resume (paused/pending)");
+    if (synth.paused) {
+      console.log("[tts] watchdog: resume (paused)");
       synth.resume();
-    } else if (synth.speaking && Date.now() - lastActivity > 15000) {
-      console.log("[tts] watchdog: hlas stojí, pause+resume");
-      synth.pause();
-      synth.resume();
-      lastActivity = Date.now();
     }
   } catch {
     // nic
