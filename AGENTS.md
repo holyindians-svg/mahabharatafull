@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- The clean reading experience reuses the canonical full-book text loaders and section parser; never duplicate translated book content into UI modules, so future books appear from the same data source.
