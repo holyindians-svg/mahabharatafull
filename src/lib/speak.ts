@@ -4,6 +4,7 @@
  */
 
 import { loadVoiceSettings } from "./voice-settings";
+import { startBackground, stopBackground } from "./background-audio";
 
 /** Přibližné tempo českého vypravěče, slouží jen pro odhad průběhu. */
 const WORDS_PER_SEC = 2.4;
@@ -161,6 +162,7 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
     if (stopped) return;
     const item = usable[index];
     if (!item) {
+      stopBackground();
       finish();
       return;
     }
@@ -238,12 +240,14 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
   } catch {
     // nic
   }
+  startBackground();
   speakItem();
 
   const stop = () => {
     if (stopped) return;
     stopped = true;
     clearTimers();
+    stopBackground();
     try {
       synth.cancel();
     } catch {
