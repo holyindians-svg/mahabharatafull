@@ -162,7 +162,8 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
     if (stopped) return;
     const item = usable[index];
     if (!item) {
-      stopBackground();
+      stopped = true;
+      stopBackground(2500);
       finish();
       return;
     }
