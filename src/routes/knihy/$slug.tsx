@@ -96,7 +96,10 @@ function BookDetail() {
     setAutoNext(false);
     setSelectedState(i);
   };
+  const selectedRef = useRef<number | null>(null);
+  selectedRef.current = selected;
   const goToSection = (i: number) => {
+    console.log("[tts] přechod na oddíl", i + 1, "z", sections.length);
     if (i < 0 || i >= sections.length) return;
     setAutoNext(true);
     setSelectedState(i);
@@ -300,9 +303,9 @@ function BookDetail() {
                 paragraphIndex={sectionBook.paragraphIndex}
                 progressKey={`book:${parva.slug}:section:${section.fromSegment}`}
                 autoStart={autoNext}
-                onFinished={() => selected !== null && goToSection(selected + 1)}
-                onPrev={() => selected !== null && goToSection(selected - 1)}
-                onNext={() => selected !== null && goToSection(selected + 1)}
+                onFinished={() => selectedRef.current !== null && goToSection(selectedRef.current + 1)}
+                onPrev={() => selectedRef.current !== null && goToSection(selectedRef.current - 1)}
+                onNext={() => selectedRef.current !== null && goToSection(selectedRef.current + 1)}
               />
             ) : null}
 

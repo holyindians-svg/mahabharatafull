@@ -4,7 +4,12 @@
  */
 
 import { loadVoiceSettings } from "./voice-settings";
-import { startBackground, stopBackground } from "./background-audio";
+import {
+  noteSpeechActivity,
+  primeBackgroundAudio,
+  startBackground,
+  stopBackground,
+} from "./background-audio";
 
 /** Přibližné tempo českého vypravěče, slouží jen pro odhad průběhu. */
 const WORDS_PER_SEC = 2.4;
@@ -49,6 +54,7 @@ function pickVoice(synth: SpeechSynthesis): SpeechSynthesisVoice | null {
  * aplikace). Název i chování zůstávají, aby volající kód nemusel měnit.
  */
 export function primeAudioPlayback() {
+  primeBackgroundAudio();
   const synth = getSynth();
   if (!synth) return Promise.resolve(false);
   try {
@@ -162,6 +168,7 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
     if (stopped) return;
     const item = usable[index];
     if (!item) {
+      console.log("[tts] dočteno vše");
       stopped = true;
       stopBackground(2500);
       finish();
@@ -198,6 +205,8 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
     };
 
     utterance.onstart = () => {
+      console.log("[tts] onstart část", index + 1, "/", usable.length);
+      noteSpeechActivity();
       if (!startedAt) startedAt = Date.now();
       advanceTo(0);
       // Odhadovaný posun pro prohlížeče, které vyslovená slova nehlásí.
@@ -214,6 +223,7 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
     utterance.onboundary = (event) => {
       if (event.name && event.name !== "word") return;
       usedBoundary = true;
+      noteSpeechActivity();
       const charIndex = event.charIndex ?? 0;
       let candidate = 0;
       for (let i = 0; i < item.words.length; i++) {
@@ -230,8 +240,18 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
       index += 1;
       speakItem();
     };
-    utterance.onend = next;
-    utterance.onerror = next;
+    utterance.onend = () => {
+      console.log("[tts] onend část", index + 1, "/", usable.length);
+      next();
+    };
+    utterance.onerror = (event) => {
+      console.log("[tts] onerror", event.error, "část", index + 1);
+      // Přerušení vlastním zastavením neposouvá dál.
+      if (event.error === "interrupted" || event.error === "canceled") {
+        if (stopped) return;
+      }
+      next();
+    };
     synth.speak(utterance);
   };
 
