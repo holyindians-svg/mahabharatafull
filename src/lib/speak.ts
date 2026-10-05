@@ -3,6 +3,8 @@
  * Nepotřebuje internet ani placenou službu — čtení je zdarma a okamžité.
  */
 
+import { loadVoiceSettings } from "./voice-settings";
+
 /** Přibližné tempo českého vypravěče, slouží jen pro odhad průběhu. */
 const WORDS_PER_SEC = 2.4;
 
@@ -162,14 +164,21 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
       finish();
       return;
     }
+    const settings = loadVoiceSettings();
     const utterance = new SpeechSynthesisUtterance(forVoice(item.text));
     utterance.lang = "cs-CZ";
-    utterance.rate = rate;
-    utterance.pitch = 0.95;
+    utterance.rate = Math.min(10, Math.max(0.1, rate * settings.rate));
+    utterance.pitch = settings.pitch;
     utterance.volume = muted ? 0 : 1;
     try {
-      const voice = pickVoice(synth);
-      if (voice) utterance.voice = voice;
+      const chosen = settings.voiceURI
+        ? synth.getVoices().find((v) => v.voiceURI === settings.voiceURI)
+        : undefined;
+      const voice = chosen ?? pickVoice(synth);
+      if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang || "cs-CZ";
+      }
     } catch {
       // Když se hlas nedá nastavit, čte se výchozím hlasem zařízení.
     }
