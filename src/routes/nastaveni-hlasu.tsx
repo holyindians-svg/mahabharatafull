@@ -10,8 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import {
   DEFAULT_VOICE_SETTINGS,
+  isCzechVoice,
   loadVoiceSettings,
   saveVoiceSettings,
   type VoiceSettings,
