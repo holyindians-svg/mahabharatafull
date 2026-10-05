@@ -117,7 +117,6 @@ function onVisibility() {
   if (document.visibilityState === "visible") {
     wakeLock = null;
     void requestWakeLock();
-    void audio?.play().catch(() => {});
   }
 }
 
@@ -129,8 +128,6 @@ export function startBackground() {
   if (graceTimer) clearTimeout(graceTimer);
   graceTimer = null;
   active = true;
-  const el = getAudio();
-  if (el && el.paused) void el.play().catch(() => {});
   lastActivity = Date.now();
   if (!watchdog) watchdog = setInterval(nudgeSpeech, 10000);
   if (!listening) {
