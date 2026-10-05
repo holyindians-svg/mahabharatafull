@@ -212,26 +212,30 @@ export function bookFallback(slug: string): BookText {
 
 const cache = new Map<string, BookText>();
 
-/** Věty celé knihy v pořadí čtení, včetně rozdělení na odstavce. */
+function toBookText(sourceParagraphs: string[]): BookText {
+  const paragraphs = renumberSections(toReadableParagraphs(sourceParagraphs));
+  return {
+    segments: paragraphs.flatMap(toSentences),
+    paragraphIndex: paragraphIndexFor(paragraphs),
+  };
+}
+
+/** Zapomene zpracovanou knihu (po stažení nové verze). */
+export function forgetBook(slug: string) {
+  cache.delete(slug);
+}
+
+/** Věty celé knihy v pořadí čtení — nejdřív z paměti telefonu, jinak ze sítě. */
 export async function loadBookSegments(slug: string): Promise<BookText> {
   const cached = cache.get(slug);
   if (cached) return cached;
-  try {
-    const res = await fetch(`/texty/${slug}.json`);
-    if (!res.ok) throw new Error("nedostupné");
-    const data = (await res.json()) as { paragraphs?: string[] };
-    const sourceParagraphs = data.paragraphs ?? [];
-    if (!sourceParagraphs.length) throw new Error("prázdné");
-    const paragraphs = renumberSections(toReadableParagraphs(sourceParagraphs));
-    const value: BookText = {
-      segments: paragraphs.flatMap(toSentences),
-      paragraphIndex: paragraphIndexFor(paragraphs),
-    };
-    cache.set(slug, value);
-    return value;
-  } catch {
-    const value = bookFallback(slug);
-    cache.set(slug, value);
-    return value;
+  const { getStoredBook, downloadBook, currentVersions } = await import("@/lib/text-store");
+  let stored = await getStoredBook(slug);
+  if (!stored) {
+    const versions = await currentVersions();
+    stored = await downloadBook(slug, versions?.[slug]?.hash);
   }
+  const value = stored?.paragraphs.length ? toBookText(stored.paragraphs) : bookFallback(slug);
+  if (stored) cache.set(slug, value);
+  return value;
 }
