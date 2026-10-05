@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { BookOpen, Flame, Home, Menu, Search, Sparkles, Swords, Users, X } from "lucide-react";
+import { BookOpen, Flame, Home, Menu, Search, Settings, Sparkles, Swords, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parvas } from "@/data/parvas";
 import { characters, characterGroups } from "@/data/characters";
@@ -30,6 +30,7 @@ const nav = [
     badge: String(astras.length),
   },
   { to: "/hledat", label: "Hledat v textech", sanskrit: "Anveṣaṇa", icon: Search, badge: null },
+  { to: "/nastaveni-hlasu", label: "Nastavení hlasu", sanskrit: "Svara", icon: Settings, badge: null },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
