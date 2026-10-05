@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Scroll } from "lucide-react";
 import { getParva, parvas } from "@/data/parvas";
