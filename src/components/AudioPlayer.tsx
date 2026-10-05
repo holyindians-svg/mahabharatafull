@@ -265,6 +265,7 @@ export function AudioPlayer({
           speaker.current = null;
           setPlaying(false);
           // Přirozený konec — uživatel nezastavil.
+          console.log("[tts] oddíl dočten, navazuji:", Boolean(callbacks.current.onFinished));
           callbacks.current.onFinished?.();
         }
       });
@@ -272,7 +273,15 @@ export function AudioPlayer({
 
   // Navázání dalšího oddílu: čtení začne hned po zobrazení.
   useEffect(() => {
-    if (autoStart && segments?.length) startBook(0, 0);
+    if (autoStart && segments?.length) {
+      console.log("[tts] automatický start dalšího oddílu");
+      try {
+        window.speechSynthesis?.cancel();
+      } catch {
+        // nic
+      }
+      startBook(0, 0);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
