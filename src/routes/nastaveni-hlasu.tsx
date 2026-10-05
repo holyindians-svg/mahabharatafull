@@ -10,8 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import {
   DEFAULT_VOICE_SETTINGS,
+  isCzechVoice,
   loadVoiceSettings,
   saveVoiceSettings,
   type VoiceSettings,
@@ -34,23 +37,31 @@ export const Route = createFileRoute("/nastaveni-hlasu")({
 
 const AUTO = "__auto__";
 
+function readCzechVoices(): SpeechSynthesisVoice[] {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return [];
+  return window.speechSynthesis
+    .getVoices()
+    .filter(isCzechVoice)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function VoiceSettingsPage() {
   const [settings, setSettings] = useState<VoiceSettings>(DEFAULT_VOICE_SETTINGS);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [handle, setHandle] = useState<SpeakHandle | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [refreshNote, setRefreshNote] = useState<string | null>(null);
 
   useEffect(() => {
     setSettings(loadVoiceSettings());
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      setLoaded(true);
+      return;
+    }
     const synth = window.speechSynthesis;
     const load = () => {
-      const list = [...synth.getVoices()];
-      list.sort((a, b) => {
-        const ac = a.lang.toLowerCase().startsWith("cs") ? 0 : 1;
-        const bc = b.lang.toLowerCase().startsWith("cs") ? 0 : 1;
-        return ac - bc || a.name.localeCompare(b.name);
-      });
-      setVoices(list);
+      setVoices(readCzechVoices());
+      setLoaded(true);
     };
     load();
     synth.addEventListener("voiceschanged", load);
@@ -58,6 +69,18 @@ function VoiceSettingsPage() {
   }, []);
 
   useEffect(() => () => handle?.stop(), [handle]);
+
+  const refreshVoices = () => {
+    setRefreshNote("Načítám hlasy…");
+    setVoices(readCzechVoices());
+    setTimeout(() => {
+      const list = readCzechVoices();
+      setVoices(list);
+      setRefreshNote(
+        list.length === 1 ? "Nalezen 1 český hlas." : `Nalezeno českých hlasů: ${list.length}.`,
+      );
+    }, 500);
+  };
 
   const update = (patch: Partial<VoiceSettings>) => {
     setSettings((prev) => {
@@ -72,6 +95,11 @@ function VoiceSettingsPage() {
     setHandle(speak("Vítejte. Takto zní vypravěč Mahábháraty s vaším nastavením."));
   };
 
+  const selected =
+    settings.voiceURI && voices.some((v) => v.voiceURI === settings.voiceURI)
+      ? settings.voiceURI
+      : AUTO;
+
   return (
     <Page>
       <PageHeader
@@ -82,22 +110,36 @@ function VoiceSettingsPage() {
       <div className="max-w-xl space-y-8 rounded-xl border border-border bg-card/40 p-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Hlas</label>
-          <Select
-            value={settings.voiceURI ?? AUTO}
-            onValueChange={(v) => update({ voiceURI: v === AUTO ? null : v })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={AUTO}>Automaticky – český hlas</SelectItem>
-              {voices.map((v) => (
-                <SelectItem key={v.voiceURI} value={v.voiceURI}>
-                  {v.name} ({v.lang})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="min-w-0 flex-1">
+              <Select
+                value={selected}
+                onValueChange={(v) => update({ voiceURI: v === AUTO ? null : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={AUTO}>Automaticky – český hlas</SelectItem>
+                  {voices.map((v) => (
+                    <SelectItem key={v.voiceURI} value={v.voiceURI}>
+                      {v.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" onClick={refreshVoices}>
+              <RefreshCw className="h-4 w-4" />
+              Obnovit hlasy z telefonu
+            </Button>
+          </div>
+          {refreshNote && <p className="text-sm text-muted-foreground">{refreshNote}</p>}
+          {loaded && voices.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              V tomto zařízení zatím není žádný český hlas. Doinstalujte ho podle návodu níže.
+            </p>
+          )}
         </div>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
@@ -134,6 +176,30 @@ function VoiceSettingsPage() {
           </Button>
         </div>
       </div>
+      <Collapsible className="mt-6 max-w-xl rounded-xl border border-border bg-card/40">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 p-5 text-left text-sm font-medium text-foreground">
+          Jak získat mnohem přirozenější a prémiový hlas bez internetu?
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 px-5 pb-5 text-sm leading-relaxed text-muted-foreground">
+          <div>
+            <p className="mb-1 font-medium text-foreground">iOS (Apple)</p>
+            <p>
+              Otevřete Nastavení telefonu → Zpřístupnění → Předčítání obsahu → Hlasy → Čeština.
+              Vyberte hlas (např. Zuzana) a zvolte možnost „Stáhnout rozšířený“ nebo „Prémiový“.
+              Poté v naší aplikaci klikněte na „Obnovit hlasy z telefonu“.
+            </p>
+          </div>
+          <div>
+            <p className="mb-1 font-medium text-foreground">Android</p>
+            <p>
+              V obchodě Google Play si stáhněte specializovaný offline modul (např. Vocalizer TTS
+              Voices nebo Acapela TTS), kde lze zakoupit prémiový český hlas. Nastavte jej v
+              telefonu a v naší aplikaci klikněte na „Obnovit hlasy z telefonu“.
+            </p>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </Page>
   );
 }
