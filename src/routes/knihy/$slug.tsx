@@ -6,8 +6,10 @@ import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { narrationFor } from "@/data/narrations";
+import { onBookUpdated } from "@/lib/text-store";
 import {
   bookFallback,
+  forgetBook,
   hasFullTextFor,
   loadBookSegments,
   sectionsOf,
