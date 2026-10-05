@@ -6,6 +6,14 @@ export interface VoiceSettings {
 }
 
 const KEY = "mahabharata:voice-settings";
+
+/** Je hlas český? (lang cs, cs-CZ, cs_CZ nebo „Czech“/„čeština“ v názvu) */
+export function isCzechVoice(voice: { lang?: string; name?: string }): boolean {
+  const lang = (voice.lang ?? "").replace(/_/g, "-").toLowerCase();
+  if (lang === "cs" || lang.startsWith("cs-")) return true;
+  const name = (voice.name ?? "").toLowerCase();
+  return name.includes("czech") || name.includes("čeština") || name.includes("cestina");
+}
 export const DEFAULT_VOICE_SETTINGS: VoiceSettings = { voiceURI: null, rate: 1, pitch: 1 };
 
 const clamp = (v: unknown, fallback: number) => {

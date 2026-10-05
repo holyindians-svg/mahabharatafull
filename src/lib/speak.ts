@@ -3,7 +3,7 @@
  * Nepotřebuje internet ani placenou službu — čtení je zdarma a okamžité.
  */
 
-import { loadVoiceSettings } from "./voice-settings";
+import { isCzechVoice, loadVoiceSettings } from "./voice-settings";
 import {
   noteSpeechActivity,
   primeBackgroundAudio,
@@ -180,9 +180,10 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
     utterance.pitch = settings.pitch;
     utterance.volume = muted ? 0 : 1;
     try {
-      const chosen = settings.voiceURI
+      const found = settings.voiceURI
         ? synth.getVoices().find((v) => v.voiceURI === settings.voiceURI)
         : undefined;
+      const chosen = found && isCzechVoice(found) ? found : undefined;
       const voice = chosen ?? pickVoice(synth);
       if (voice) {
         utterance.voice = voice;
