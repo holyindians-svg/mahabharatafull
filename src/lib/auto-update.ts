@@ -29,7 +29,16 @@ export function startAutoUpdate() {
     const current = await fetchFingerprint();
     checking = false;
     if (!current) return;
-    if (baseline === null) baseline = current;
+    if (baseline === null) {
+      baseline = current;
+      // Pokud se otevřela „zamrzlá“ stará verze, její styl na serveru už není.
+      const loaded = Array.from(
+        document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href*="/assets/"]'),
+      ).map((l) => new URL(l.href).pathname);
+      if (loaded.length && loaded.some((path) => !current.includes(path))) {
+        window.location.reload();
+      }
+    }
     else if (current !== baseline) window.location.reload();
   };
 
