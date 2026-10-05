@@ -176,6 +176,30 @@ function VoiceSettingsPage() {
           </Button>
         </div>
       </div>
+      <Collapsible className="mt-6 max-w-xl rounded-xl border border-border bg-card/40">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 p-5 text-left text-sm font-medium text-foreground">
+          Jak získat mnohem přirozenější a prémiový hlas bez internetu?
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 px-5 pb-5 text-sm leading-relaxed text-muted-foreground">
+          <div>
+            <p className="mb-1 font-medium text-foreground">iOS (Apple)</p>
+            <p>
+              Otevřete Nastavení telefonu → Zpřístupnění → Předčítání obsahu → Hlasy → Čeština.
+              Vyberte hlas (např. Zuzana) a zvolte možnost „Stáhnout rozšířený“ nebo „Prémiový“.
+              Poté v naší aplikaci klikněte na „Obnovit hlasy z telefonu“.
+            </p>
+          </div>
+          <div>
+            <p className="mb-1 font-medium text-foreground">Android</p>
+            <p>
+              V obchodě Google Play si stáhněte specializovaný offline modul (např. Vocalizer TTS
+              Voices nebo Acapela TTS), kde lze zakoupit prémiový český hlas. Nastavte jej v
+              telefonu a v naší aplikaci klikněte na „Obnovit hlasy z telefonu“.
+            </p>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </Page>
   );
 }
