@@ -348,6 +348,32 @@ export function AudioPlayer({
     void run(title, "narrate");
   };
 
+  // Ovládání ze zamčené obrazovky (Media Session).
+  const mediaRef = useRef({ togglePlay, startBook, stopSpeech, playing, active });
+  mediaRef.current = { togglePlay, startBook, stopSpeech, playing, active };
+  useEffect(() => {
+    if (!playing) return;
+    const m = () => mediaRef.current;
+    const jump = (delta: number) => {
+      if (!segments?.length) return;
+      m().startBook(Math.max(0, (m().active ?? 0) + delta), 0);
+    };
+    setMediaSession(title, subtitle ?? "Mahábhárata", {
+      play: () => {
+        if (!m().playing) m().togglePlay();
+      },
+      pause: () => {
+        if (m().playing) m().togglePlay();
+      },
+      stop: () => {
+        m().stopSpeech();
+        setPlaying(false);
+      },
+      ...(segments?.length ? { previoustrack: () => jump(-1), nexttrack: () => jump(1) } : {}),
+    });
+  }, [playing, title, subtitle, segments]);
+
+
 
   // Průběh se řídí skutečným přehráváním.
   useEffect(() => {
