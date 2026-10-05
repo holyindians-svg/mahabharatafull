@@ -61,7 +61,6 @@ export function primeAudioPlayback() {
     synth.resume();
     // Krátké tiché vyslovení odemkne hlas pro pozdější automatické čtení.
     const warmup = new SpeechSynthesisUtterance(" ");
-    warmup.volume = 0;
     warmup.lang = "cs-CZ";
     synth.speak(warmup);
   } catch {
