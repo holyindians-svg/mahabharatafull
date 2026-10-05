@@ -13,7 +13,7 @@ import {
 import { parvas } from "@/data/parvas";
 
 type ReadingBook = {
-  slug: string;
+  slug: (typeof FULL_TEXT_BOOKS)[number];
   name: string;
   sanskrit: string;
   book: BookText;
@@ -71,7 +71,7 @@ function ReadingBooksPage() {
   useEffect(() => {
     let alive = true;
     void Promise.all(
-      FULL_TEXT_BOOKS.map(async (slug) => {
+      FULL_TEXT_BOOKS.map(async (slug): Promise<ReadingBook | undefined> => {
         const parva = parvas.find((item) => item.slug === slug);
         if (!parva) return undefined;
         const book = await loadBookSegments(slug);
