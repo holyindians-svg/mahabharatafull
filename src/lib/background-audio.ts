@@ -93,7 +93,6 @@ function onVisibility() {
   if (document.visibilityState === "visible") {
     wakeLock = null;
     void requestWakeLock();
-    void audio?.play().catch(() => {});
   }
 }
 
@@ -105,8 +104,8 @@ export function startBackground() {
   if (graceTimer) clearTimeout(graceTimer);
   graceTimer = null;
   active = true;
-  const el = getAudio();
-  if (el) void el.play().catch(() => {});
+  // Tichá smyčka se nespouští: na telefonech přebírala zvuk a hlas
+  // zařízení pak nebyl slyšet.
   if (!watchdog) watchdog = setInterval(nudgeSpeech, 3000);
   if (!listening) {
     document.addEventListener("visibilitychange", onVisibility);
