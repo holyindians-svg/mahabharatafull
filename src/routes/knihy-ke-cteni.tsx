@@ -3,8 +3,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { BookOpenText, X } from "lucide-react";
 import { Page, PageHeader } from "@/components/Bits";
 import { Button } from "@/components/ui/button";
+import { onBookUpdated } from "@/lib/text-store";
 import {
   FULL_TEXT_BOOKS,
+  forgetBook,
   loadBookSegments,
   sectionsOf,
   type BookSection,
