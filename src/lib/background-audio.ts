@@ -98,8 +98,12 @@ function onVisibility() {
 }
 
 /** Spustí udržování čtení na pozadí. Volat při startu čtení. */
+let graceTimer: ReturnType<typeof setTimeout> | null = null;
+
 export function startBackground() {
   if (typeof window === "undefined") return;
+  if (graceTimer) clearTimeout(graceTimer);
+  graceTimer = null;
   active = true;
   const el = getAudio();
   if (el) void el.play().catch(() => {});
@@ -113,7 +117,14 @@ export function startBackground() {
 }
 
 /** Ukončí udržování čtení na pozadí. */
-export function stopBackground() {
+export function stopBackground(graceMs = 0) {
+  if (graceTimer) clearTimeout(graceTimer);
+  graceTimer = null;
+  if (graceMs > 0) {
+    // Přirozený konec: počká, jestli nenaváže další oddíl.
+    graceTimer = setTimeout(() => stopBackground(0), graceMs);
+    return;
+  }
   active = false;
   try {
     audio?.pause();

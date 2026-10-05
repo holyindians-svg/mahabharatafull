@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Scroll } from "lucide-react";
 import { getParva, parvas } from "@/data/parvas";
@@ -89,7 +89,43 @@ function BookDetail() {
     });
     return groups;
   }, [sections]);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelectedState] = useState<number | null>(null);
+  const [autoNext, setAutoNext] = useState(false);
+  const [playingSection, setPlayingSection] = useState<number | null>(null);
+  const setSelected = (i: number | null) => {
+    setAutoNext(false);
+    setSelectedState(i);
+  };
+  const goToSection = (i: number) => {
+    if (i < 0 || i >= sections.length) return;
+    setAutoNext(true);
+    setSelectedState(i);
+  };
+  const sectionAt = (segment: number) => {
+    let found: number | null = null;
+    for (let k = 0; k < sections.length; k++) {
+      const s = sections[k];
+      if (s && s.fromSegment <= segment) found = k;
+      else break;
+    }
+    return found;
+  };
+  const highlighted = selected ?? playingSection;
+  const listRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (highlighted === null) return;
+    const box = listRef.current;
+    const btn = box?.querySelector<HTMLElement>(`[data-section="${highlighted}"]`);
+    if (!box || !btn) return;
+    const b = box.getBoundingClientRect();
+    const r = btn.getBoundingClientRect();
+    if (r.top < b.top + 8 || r.bottom > b.bottom - 8) {
+      box.scrollTo({
+        top: box.scrollTop + (r.top - b.top) - b.height / 2 + r.height / 2,
+        behavior: "smooth",
+      });
+    }
+  }, [highlighted]);
   const section = selected !== null ? sections[selected] : undefined;
   const sectionBook = useMemo(() => {
     if (!book || !section) return undefined;
@@ -181,6 +217,7 @@ function BookDetail() {
               segments={book?.segments}
               paragraphIndex={book?.paragraphIndex}
               progressKey={hasFullText ? `book:${parva.slug}` : undefined}
+              onSegment={sections.length ? (seg) => setPlayingSection(sectionAt(seg)) : undefined}
 
 
             />
@@ -203,7 +240,7 @@ function BookDetail() {
                   </button>
                 </div>
                 {hasGroups ? (
-                  <div className="mt-3 max-h-[26rem] space-y-5 overflow-y-auto pr-1">
+                  <div ref={listRef} className="mt-3 max-h-[26rem] space-y-5 overflow-y-auto pr-1">
                     {sectionGroups.map((g) => (
                       <div key={g.name}>
                         <p className="mb-2.5 font-display text-sm font-semibold text-foreground">
@@ -214,10 +251,11 @@ function BookDetail() {
                             <button
                               key={s.fromSegment}
                               type="button"
+                              data-section={i}
                               onClick={() => setSelected(i)}
                               className={cn(
                                 "truncate rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors",
-                                selected === i
+                                highlighted === i
                                   ? "border-primary/60 bg-primary/15 text-primary"
                                 : "border-border text-muted-foreground hover:text-foreground",
                               )}
@@ -230,15 +268,16 @@ function BookDetail() {
                     ))}
                   </div>
                 ) : (
-                  <div className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+                  <div ref={listRef} className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
                     {sections.map((s, i) => (
                       <button
                         key={s.fromSegment}
                         type="button"
+                        data-section={i}
                         onClick={() => setSelected(i)}
                         className={cn(
                           "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
-                          selected === i
+                          highlighted === i
                             ? "border-primary/60 bg-primary/15 text-primary"
                             : "border-border text-muted-foreground hover:text-foreground",
                         )}
@@ -260,6 +299,10 @@ function BookDetail() {
                 segments={sectionBook.segments}
                 paragraphIndex={sectionBook.paragraphIndex}
                 progressKey={`book:${parva.slug}:section:${section.fromSegment}`}
+                autoStart={autoNext}
+                onFinished={() => selected !== null && goToSection(selected + 1)}
+                onPrev={() => selected !== null && goToSection(selected - 1)}
+                onNext={() => selected !== null && goToSection(selected + 1)}
               />
             ) : null}
 
