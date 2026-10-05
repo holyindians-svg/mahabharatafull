@@ -110,7 +110,7 @@ function VoiceSettingsPage() {
       <div className="max-w-xl space-y-8 rounded-xl border border-border bg-card/40 p-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Hlas</label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <div className="min-w-0 flex-1">
               <Select
                 value={selected}
