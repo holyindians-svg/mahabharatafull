@@ -198,7 +198,7 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
       if (!startedAt) startedAt = Date.now();
       advanceTo(0);
       // Odhadovaný posun pro prohlížeče, které vyslovená slova nehlásí.
-      const perWord = 1000 / (WORDS_PER_SEC * Math.max(0.5, rate));
+      const perWord = 1000 / (WORDS_PER_SEC * Math.max(0.25, rate * settings.rate));
       for (let i = 1; i < item.words.length; i++) {
         timers.push(
           setTimeout(() => {
@@ -269,7 +269,7 @@ function runUtterances(items: SpeechItem[], options: RunOptions): SpeakHandle {
         // nic
       }
     },
-    scheduledSeconds: () => totalWords / (WORDS_PER_SEC * Math.max(0.5, rate)),
+    scheduledSeconds: () => totalWords / (WORDS_PER_SEC * Math.max(0.25, rate * loadVoiceSettings().rate)),
     elapsedSeconds: () => (startedAt ? (Date.now() - startedAt) / 1000 : 0),
     done,
   };
