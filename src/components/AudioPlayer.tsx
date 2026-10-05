@@ -32,6 +32,15 @@ interface AudioPlayerProps {
   paragraphIndex?: number[] | undefined;
   /** Klíč pro uložení pozice přehrávání do paměti zařízení. */
   progressKey?: string | undefined;
+  /** Po připojení rovnou začne číst od začátku (navázání dalšího oddílu). */
+  autoStart?: boolean | undefined;
+  /** Zavolá se po přirozeném dočtení celého textu (ne po zastavení). */
+  onFinished?: (() => void) | undefined;
+  /** Ohlásí právě čtenou větu (index v `segments`). */
+  onSegment?: ((index: number) => void) | undefined;
+  /** Přepnutí na předchozí / další část z zamčené obrazovky. */
+  onPrev?: (() => void) | undefined;
+  onNext?: (() => void) | undefined;
 }
 
 
@@ -83,7 +92,14 @@ export function AudioPlayer({
   segments,
   paragraphIndex,
   progressKey,
+  autoStart,
+  onFinished,
+  onSegment,
+  onPrev,
+  onNext,
 }: AudioPlayerProps) {
+  const callbacks = useRef({ onFinished, onSegment });
+  callbacks.current = { onFinished, onSegment };
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(fallbackDuration);
@@ -208,6 +224,7 @@ export function AudioPlayer({
         setActive(i);
         setActiveChar(0);
         currentProgress.current = { index: i, charIndex: 0 };
+        callbacks.current.onSegment?.(i);
       },
       onWord: ({ segmentIndex, charIndex }) => {
         setActive(segmentIndex);
@@ -247,9 +264,17 @@ export function AudioPlayer({
         if (speaker.current === handle) {
           speaker.current = null;
           setPlaying(false);
+          // Přirozený konec — uživatel nezastavil.
+          callbacks.current.onFinished?.();
         }
       });
   };
+
+  // Navázání dalšího oddílu: čtení začne hned po zobrazení.
+  useEffect(() => {
+    if (autoStart && segments?.length) startBook(0, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Text pouze klidně následuje hlas a posune se až blízko okraje.
   useEffect(() => {
@@ -350,6 +375,8 @@ export function AudioPlayer({
   };
 
   // Ovládání ze zamčené obrazovky (Media Session).
+  const navRef = useRef({ onPrev, onNext });
+  navRef.current = { onPrev, onNext };
   const mediaRef = useRef({ togglePlay, startBook, stopSpeech, playing, active });
   mediaRef.current = { togglePlay, startBook, stopSpeech, playing, active };
   useEffect(() => {
@@ -370,7 +397,12 @@ export function AudioPlayer({
         m().stopSpeech();
         setPlaying(false);
       },
-      ...(segments?.length ? { previoustrack: () => jump(-1), nexttrack: () => jump(1) } : {}),
+      ...(segments?.length
+        ? {
+            previoustrack: () => (navRef.current.onPrev ? navRef.current.onPrev() : jump(-1)),
+            nexttrack: () => (navRef.current.onNext ? navRef.current.onNext() : jump(1)),
+          }
+        : {}),
     });
   }, [playing, title, subtitle, segments]);
 
