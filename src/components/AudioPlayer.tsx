@@ -3,6 +3,7 @@ import { Headphones, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-rea
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { askAi } from "@/lib/ask-ai";
+import { setMediaSession } from "@/lib/background-audio";
 import {
   primeAudioPlayback,
   resumeAudioPlayback,
