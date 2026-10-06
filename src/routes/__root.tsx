@@ -13,7 +13,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppShell } from "@/components/AppShell";
-import { startAutoUpdate } from "@/lib/auto-update";
+import { startTextSync } from "@/lib/text-store";
+import { registerPwa } from "@/lib/pwa-register";
 
 function NotFoundComponent() {
   return (
@@ -134,7 +135,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  useEffect(() => startAutoUpdate(), []);
+  useEffect(() => {
+    registerPwa();
+    return startTextSync();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
