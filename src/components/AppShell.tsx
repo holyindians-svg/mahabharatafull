@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { BookOpen, BookOpenText, Flame, Home, Menu, Search, Settings, Sparkles, Swords, Users, X } from "lucide-react";
+import { BookOpen, BookOpenText, Download, Flame, Home, Menu, Search, Settings, Sparkles, Swords, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parvas } from "@/data/parvas";
 import { characters, characterGroups } from "@/data/characters";
@@ -20,6 +20,13 @@ const nav = [
     label: "Knihy ke čtení",
     sanskrit: "Čisté čtení",
     icon: BookOpenText,
+    badge: null,
+  },
+  {
+    to: "/stahnout-texty",
+    label: "Stáhnout texty",
+    sanskrit: "TXT · PDF",
+    icon: Download,
     badge: null,
   },
   {

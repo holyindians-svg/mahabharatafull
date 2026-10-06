@@ -10,3 +10,6 @@
 <!-- LOVABLE:END -->
 
 - The clean reading experience reuses the canonical full-book text loaders and section parser; never duplicate translated book content into UI modules, so future books appear from the same data source.
+- Book texts sync via IndexedDB + public/texty/versions.json (regenerate with `node scripts/build-text-versions.mjs` after changing texts); only changed books re-download, so no forced reloads.
+- Service worker is vite-plugin-pwa generateSW, registered only from src/lib/pwa-register.ts (never in dev/preview); HTML NetworkFirst, /texty not cached by SW.
+- Text export (TXT/PDF) uses src/lib/export-text.ts with the shared book loaders; PDF is window.print with #print-root and @media print A4 rules.
