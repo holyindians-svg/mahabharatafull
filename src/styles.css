@@ -228,6 +228,14 @@
     color: #000;
     background: #fff;
   }
+  #print-root h1,
+  #print-root h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    text-transform: none;
+    letter-spacing: normal;
+    font-variant: normal;
+    color: #000;
+  }
   #print-root h1 {
     font-size: 18pt;
     margin: 0 0 12pt;
