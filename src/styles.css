@@ -204,3 +204,42 @@
     );
   }
 }
+
+#print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+  body.printing > *:not(#print-root) {
+    display: none !important;
+  }
+  body.printing {
+    background: #fff !important;
+  }
+  body.printing #print-root {
+    display: block;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #000;
+    background: #fff;
+  }
+  #print-root h1 {
+    font-size: 18pt;
+    margin: 0 0 12pt;
+    break-after: avoid;
+  }
+  #print-root h2 {
+    font-size: 13pt;
+    margin: 14pt 0 6pt;
+    break-after: avoid;
+  }
+  #print-root p {
+    margin: 0 0 8pt;
+    break-inside: avoid;
+  }
+}
