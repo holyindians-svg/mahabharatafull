@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { Headphones, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -32,6 +38,8 @@ interface AudioPlayerProps {
   paragraphIndex?: number[] | undefined;
   /** Klíč pro uložení pozice přehrávání do paměti zařízení. */
   progressKey?: string | undefined;
+  /** Nahrané MP3 — přehraje se přes HTML5 Audio místo hlasu zařízení. */
+  audioUrl?: string | undefined;
   /** Po připojení rovnou začne číst od začátku (navázání dalšího oddílu). */
   autoStart?: boolean | undefined;
   /** Zavolá se po přirozeném dočtení celého textu (ne po zastavení). */
@@ -92,6 +100,7 @@ export function AudioPlayer({
   segments,
   paragraphIndex,
   progressKey,
+  audioUrl,
   autoStart,
   onFinished,
   onSegment,
@@ -120,6 +129,76 @@ export function AudioPlayer({
   const autoScrolling = useRef(0);
   const savedAt = useRef(0);
   const storageKey = progressKey ? `mahabharata:progress:${progressKey}` : null;
+
+  /** Nahraná nahrávka (HTML5 Audio) místo hlasu zařízení. */
+  const audioEl = useRef<HTMLAudioElement | null>(null);
+  const audioMode = !!audioUrl;
+  const [volume, setVolume] = useState(1);
+  const volumeBox = useRef<HTMLSpanElement | null>(null);
+  const pendingTime = useRef<number | null>(null);
+  const approxActive = useRef(-1);
+
+  /** Uloží pozici v nahrávce do paměti zařízení. */
+  const saveAudioTime = (time: number, force = false) => {
+    if (!storageKey) return;
+    const now = Date.now();
+    if (!force && now - savedAt.current < 2000) return;
+    savedAt.current = now;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ time }));
+    } catch {
+      // paměť není dostupná
+    }
+  };
+
+  // Nahraná nahrávka: jeden skrytý prvek HTML5 Audio.
+  useEffect(() => {
+    if (!audioUrl || typeof window === "undefined") return;
+    const el = new Audio();
+    el.src = audioUrl;
+    el.preload = "metadata";
+    audioEl.current = el;
+    try {
+      const raw = storageKey ? localStorage.getItem(storageKey) : null;
+      if (raw) {
+        const saved = JSON.parse(raw) as { time?: number };
+        if (typeof saved.time === "number" && saved.time > 0) pendingTime.current = saved.time;
+      }
+    } catch {
+      // uložená pozice je poškozená
+    }
+    const onMeta = () => {
+      if (isFinite(el.duration) && el.duration > 0) setDuration(el.duration);
+      if (pendingTime.current !== null) {
+        el.currentTime = Math.min(pendingTime.current, Math.max(0, el.duration - 1));
+        pendingTime.current = null;
+      }
+    };
+    const onTime = () => {
+      setPosition(el.currentTime);
+      saveAudioTime(el.currentTime);
+    };
+    const onEnded = () => {
+      setPlaying(false);
+      if (storageKey) saveAudioTime(el.duration, true);
+      callbacks.current.onFinished?.();
+    };
+    el.addEventListener("loadedmetadata", onMeta);
+    el.addEventListener("timeupdate", onTime);
+    el.addEventListener("ended", onEnded);
+    return () => {
+      el.removeEventListener("loadedmetadata", onMeta);
+      el.removeEventListener("timeupdate", onTime);
+      el.removeEventListener("ended", onEnded);
+      try {
+        el.pause();
+      } catch {
+        // nic
+      }
+      audioEl.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioUrl]);
 
   /** Uloží pozici v knize do paměti zařízení. */
   const currentProgress = useRef({ index: null as number | null, charIndex: 0 });
@@ -273,6 +352,19 @@ export function AudioPlayer({
 
   // Navázání dalšího oddílu: čtení začne hned po zobrazení.
   useEffect(() => {
+    if (autoStart && audioMode) {
+      const el = audioEl.current;
+      if (el) {
+        el.playbackRate = speed;
+        el.muted = muted;
+        el.volume = volume;
+        void el.play().catch(() => {
+          setError("Zvuk se nepodařilo spustit. Zkuste to znovu.");
+          setPlaying(false);
+        });
+      }
+      return;
+    }
     if (autoStart && segments?.length) {
       console.log("[tts] automatický start dalšího oddílu");
       try {
@@ -357,6 +449,25 @@ export function AudioPlayer({
 
   const togglePlay = () => {
     void primeAudioPlayback();
+    if (audioMode) {
+      const el = audioEl.current;
+      if (!el) return;
+      if (playing) {
+        el.pause();
+        saveAudioTime(el.currentTime, true);
+        setPlaying(false);
+      } else {
+        el.playbackRate = speed;
+        el.muted = muted;
+        el.volume = volume;
+        setPlaying(true);
+        void el.play().catch(() => {
+          setError("Zvuk se nepodařilo spustit. Zkuste to znovu.");
+          setPlaying(false);
+        });
+      }
+      return;
+    }
     if (playing || speaker.current) {
       stopSpeech();
       setPlaying(false);
@@ -432,14 +543,32 @@ export function AudioPlayer({
   }, [playing]);
 
   useEffect(() => {
+    if (audioEl.current) audioEl.current.playbackRate = speed;
     speaker.current?.setRate(speed);
-    saveProgress(active, activeChar, speed, true);
+    if (!audioMode) saveProgress(active, activeChar, speed, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speed]);
 
+  // U nahrávky se text sleduje odhadem podle času (MP3 nemá značky slov).
   useEffect(() => {
+    if (!audioMode || !playing) return;
+    const total = segments?.length ?? 0;
+    if (!total) return;
+    const ratio = duration > 0 ? Math.min(1, position / duration) : 0;
+    const idx = Math.min(total - 1, Math.floor(ratio * total));
+    if (idx !== approxActive.current) {
+      approxActive.current = idx;
+      setActive(idx);
+    }
+  }, [audioMode, playing, position, duration, segments]);
+
+  useEffect(() => {
+    if (audioEl.current) {
+      audioEl.current.muted = muted;
+      audioEl.current.volume = volume;
+    }
     speaker.current?.setMuted(muted);
-  }, [muted]);
+  }, [muted, volume]);
 
   useEffect(() => {
     const resumeWhenVisible = () => {
@@ -448,6 +577,16 @@ export function AudioPlayer({
     document.addEventListener("visibilitychange", resumeWhenVisible);
     return () => document.removeEventListener("visibilitychange", resumeWhenVisible);
   }, []);
+
+  /** Hlasitost nahrané nahrávky se nastavuje tažením proužku. */
+  const applyVolumeFromPointer = (e: ReactPointerEvent) => {
+    const box = volumeBox.current;
+    if (!box) return;
+    const rect = box.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setVolume(ratio);
+    if (muted) setMuted(false);
+  };
 
   const percent = (position / Math.max(duration, 1)) * 100;
 
@@ -521,9 +660,18 @@ export function AudioPlayer({
             value={[position]}
             max={Math.max(duration, 1)}
             step={1}
-            aria-disabled="true"
-            tabIndex={-1}
-            className="pointer-events-none"
+            onValueChange={
+              audioMode
+                ? (values) => {
+                    const time = values[0] ?? 0;
+                    if (audioEl.current) audioEl.current.currentTime = time;
+                    setPosition(time);
+                  }
+                : undefined
+            }
+            aria-disabled={audioMode ? undefined : "true"}
+            tabIndex={audioMode ? 0 : -1}
+            className={audioMode ? undefined : "pointer-events-none"}
             aria-label="Průběh nahrávky"
           />
           <div className="mt-2 flex items-center justify-between text-xs tabular-nums text-muted-foreground">
@@ -553,6 +701,12 @@ export function AudioPlayer({
           <button
             type="button"
             onClick={() => {
+              const audio = audioEl.current;
+              if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+                pendingTime.current = null;
+              }
               speaker.current?.stop();
               speaker.current = null;
               setPlaying(false);
@@ -582,9 +736,27 @@ export function AudioPlayer({
           className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
-          <span className="h-1 w-20 overflow-hidden rounded-full bg-muted">
+          <span
+            ref={volumeBox}
+            onPointerDown={
+              audioMode
+                ? (e) => {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    applyVolumeFromPointer(e);
+                  }
+                : undefined
+            }
+            onPointerMove={
+              audioMode ? (e) => e.buttons === 1 && applyVolumeFromPointer(e) : undefined
+            }
+            className={cn(
+              "h-1 w-20 overflow-hidden rounded-full bg-muted",
+              audioMode && "cursor-pointer",
+            )}
+          >
             <span
-              className={cn("block h-full bg-primary/70", muted ? "w-0" : "w-2/3")}
+              className={cn("block h-full bg-primary/70", muted ? "w-0" : audioMode ? "" : "w-2/3")}
+              style={audioMode && !muted ? { width: `${Math.round(volume * 100)}%` } : undefined}
             />
           </span>
         </button>
@@ -625,6 +797,7 @@ export function AudioPlayer({
                   >
                     {tokens.map((token) => {
                       const isCurrentWord =
+                        !audioMode &&
                         index === active &&
                         token.isWord &&
                         activeChar >= token.from &&
@@ -633,9 +806,9 @@ export function AudioPlayer({
                         <span
                           key={`${token.from}-${token.to}`}
                           ref={isCurrentWord ? activeLine : undefined}
-                          onClick={token.isWord ? () => startBook(index, token.from) : undefined}
+                          onClick={token.isWord && !audioMode ? () => startBook(index, token.from) : undefined}
                           className={cn(
-                            token.isWord ? "cursor-pointer" : "",
+                            token.isWord && !audioMode ? "cursor-pointer" : "",
                             isCurrentWord
                               ? "rounded-sm bg-primary px-0.5 font-bold text-primary-foreground"
                               : "",
