@@ -23,6 +23,13 @@ import { BackLink, Chip, Page, Section } from "@/components/Bits";
 /** Knihy s klikatelným menu oddílů. */
 const SECTION_NAV_BOOKS = ["adi-parva", "sabha-parva", "vana-parva"];
 
+/** Nahrané MP3 pro konkrétní oddíly (kniha → index první věty oddílu → URL). */
+const AUDIO_SECTION_SOURCES: Record<string, Record<number, string>> = {
+  "adi-parva": {
+    0: "https://ckcnmvnjxziekezhzozh.supabase.co/storage/v1/object/public/audiobooks/ElevenLabs_2026-10-10T10_28_14_Roger%20-%20Laid-Back,%20Casual,%20Resonant_pre_sp100_s50_sb75_v4.mp3",
+  },
+};
+
 /** Krátký popisek tlačítka oddílu v tematicky seskupeném seznamu. */
 function shortLabel(title: string): string {
   const n = /(\d+)/.exec(title);
@@ -314,7 +321,8 @@ function BookDetail() {
                 minutes={sectionMinutes}
                 segments={sectionBook.segments}
                 paragraphIndex={sectionBook.paragraphIndex}
-                progressKey={`book:${parva.slug}:section:${section.fromSegment}`}
+                audioUrl={AUDIO_SECTION_SOURCES[parva.slug]?.[sections.indexOf(section)]}
+                progressKey={`book:${parva.slug}:section:${AUDIO_SECTION_SOURCES[parva.slug]?.[sections.indexOf(section)] ? "mp3:" : ""}${section.fromSegment}`}
                 autoStart={autoNext}
                 onFinished={() => selectedRef.current !== null && goToSection(selectedRef.current + 1)}
                 onPrev={() => selectedRef.current !== null && goToSection(selectedRef.current - 1)}
