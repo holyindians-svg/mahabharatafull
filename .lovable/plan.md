@@ -9,7 +9,7 @@ Nahraný znak (zlatý luk se šípem a pavím perem na tmavě modrém podkladu) 
    - `<link rel="icon" type="image/png" href="/icon.png" />`
    - `<link rel="apple-touch-icon" href="/icon.png" />`
 3. Ze stejného zdroje přegenerovat zbývající ikony, které se nepoužívají z hlavičky, ale z instalace na plochu: `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` (180 × 180) a `favicon.ico`. Soubory i jejich názvy zůstanou, vymění se jen obrázek uvnitř.
-4. U maskovatelné varianty ponechat luk s perem uvnitř bezpečné oblasti (cca 80 % plochy), takže při oříznutí telefonem na kruh nebo čtverec nic重要的 nezmizí; tmavé pozadí doplňuje rohy až ke krajům.
+4. U maskovatelné varianty ponechat luk s perem uvnitř bezpečné oblasti (cca 80 % plochy), takže při oříznutí telefonem na kruh nebo čtverec nic důležité nezmizí; tmavé pozadí doplňuje rohy až ke krajům.
 5. Ověřit, že oba odkazy jsou v hlavičce, že všechny ikony existují ve správných rozměrech a že se načítají; build bez chyb.
 
 ## Technické detaily
