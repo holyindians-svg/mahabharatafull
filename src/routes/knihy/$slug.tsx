@@ -321,8 +321,8 @@ function BookDetail() {
                 minutes={sectionMinutes}
                 segments={sectionBook.segments}
                 paragraphIndex={sectionBook.paragraphIndex}
-                audioUrl={AUDIO_SECTION_SOURCES[parva.slug]?.[section.fromSegment]}
-                progressKey={`book:${parva.slug}:section:${AUDIO_SECTION_SOURCES[parva.slug]?.[section.fromSegment] ? "mp3:" : ""}${section.fromSegment}`}
+                audioUrl={AUDIO_SECTION_SOURCES[parva.slug]?.[sections.indexOf(section)]}
+                progressKey={`book:${parva.slug}:section:${AUDIO_SECTION_SOURCES[parva.slug]?.[sections.indexOf(section)] ? "mp3:" : ""}${section.fromSegment}`}
                 autoStart={autoNext}
                 onFinished={() => selectedRef.current !== null && goToSection(selectedRef.current + 1)}
                 onPrev={() => selectedRef.current !== null && goToSection(selectedRef.current - 1)}
