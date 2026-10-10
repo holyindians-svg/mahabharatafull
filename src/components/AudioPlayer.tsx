@@ -660,15 +660,15 @@ export function AudioPlayer({
             value={[position]}
             max={Math.max(duration, 1)}
             step={1}
-            onValueChange={
-              audioMode
-                ? (values) => {
+            {...(audioMode
+              ? {
+                  onValueChange: (values: number[]) => {
                     const time = values[0] ?? 0;
                     if (audioEl.current) audioEl.current.currentTime = time;
                     setPosition(time);
-                  }
-                : undefined
-            }
+                  },
+                }
+              : {})}
             aria-disabled={audioMode ? undefined : "true"}
             tabIndex={audioMode ? 0 : -1}
             className={audioMode ? undefined : "pointer-events-none"}
