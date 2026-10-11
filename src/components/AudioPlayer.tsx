@@ -231,10 +231,15 @@ export function AudioPlayer({
     };
     el.addEventListener("loadedmetadata", onMeta);
     el.addEventListener("timeupdate", onTime);
+    // Přesnější hlídání konce oddílu (timeupdate chodí jen po ~250 ms i řidčeji).
+    const stopTimer = window.setInterval(() => {
+      if (stopAt.current !== null && !el.paused && el.currentTime >= stopAt.current) onTime();
+    }, 100);
     el.addEventListener("ended", onEnded);
     return () => {
       el.removeEventListener("loadedmetadata", onMeta);
       el.removeEventListener("timeupdate", onTime);
+      window.clearInterval(stopTimer);
       el.removeEventListener("ended", onEnded);
       try {
         el.pause();
