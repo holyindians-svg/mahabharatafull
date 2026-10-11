@@ -150,8 +150,20 @@ function BookDetail() {
   };
   const highlighted = selected ?? playingSection;
   const listRef = useRef<HTMLDivElement | null>(null);
+  const lastTouch = useRef(0);
+  const [scrollRetry, setScrollRetry] = useState(0);
+  const markTouch = () => {
+    lastTouch.current = Date.now();
+  };
+  const touchGuard = { onTouchStart: markTouch, onTouchMove: markTouch, onWheel: markTouch, onPointerDown: markTouch };
   useEffect(() => {
     if (highlighted === null) return;
+    const idle = Date.now() - lastTouch.current;
+    if (idle < 4000) {
+      // Uživatel právě posouvá prstem — posun počká.
+      const t = window.setTimeout(() => setScrollRetry((n) => n + 1), 4000 - idle + 50);
+      return () => window.clearTimeout(t);
+    }
     const box = listRef.current;
     const btn = box?.querySelector<HTMLElement>(`[data-section="${highlighted}"]`);
     if (!box || !btn) return;
@@ -163,7 +175,7 @@ function BookDetail() {
         behavior: "smooth",
       });
     }
-  }, [highlighted]);
+  }, [highlighted, scrollRetry]);
   const section = selected !== null ? sections[selected] : undefined;
   const sectionBook = useMemo(() => {
     if (!book || !section) return undefined;
@@ -275,7 +287,7 @@ function BookDetail() {
                       if (audioBook) playerRef.current?.playRange(0);
                     }}
                     className={cn(
-                      "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                      "press min-h-11 rounded-md border px-3 py-1 text-xs transition-colors",
                       selected === null
                         ? "border-primary/60 bg-primary/15 text-primary"
                         : "border-border text-muted-foreground hover:text-foreground",
@@ -285,7 +297,7 @@ function BookDetail() {
                   </button>
                 </div>
                 {hasGroups ? (
-                  <div ref={listRef} className="mt-3 max-h-[26rem] space-y-5 overflow-y-auto pr-1">
+                  <div ref={listRef} {...touchGuard} className="mt-3 max-h-[26rem] space-y-5 overflow-y-auto overscroll-contain pr-1">
                     {sectionGroups.map((g) => (
                       <div key={g.name}>
                         <p className="mb-2.5 font-display text-sm font-semibold text-foreground">
@@ -299,7 +311,7 @@ function BookDetail() {
                               data-section={i}
                               onClick={() => setSelected(i)}
                               className={cn(
-                                "truncate rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors",
+                                "press min-h-11 truncate rounded-md border px-3.5 py-2.5 text-left text-sm transition-colors",
                                 highlighted === i
                                   ? "border-primary/60 bg-primary/15 text-primary"
                                 : "border-border text-muted-foreground hover:text-foreground",
@@ -313,7 +325,7 @@ function BookDetail() {
                     ))}
                   </div>
                 ) : (
-                  <div ref={listRef} className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+                  <div ref={listRef} {...touchGuard} className="mt-3 grid max-h-56 overscroll-contain grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
                     {sections.map((s, i) => (
                       <button
                         key={s.fromSegment}
@@ -321,7 +333,7 @@ function BookDetail() {
                         data-section={i}
                         onClick={() => setSelected(i)}
                         className={cn(
-                          "truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
+                          "press min-h-11 truncate rounded-md border px-2.5 py-1 text-left text-xs transition-colors",
                           highlighted === i
                             ? "border-primary/60 bg-primary/15 text-primary"
                             : "border-border text-muted-foreground hover:text-foreground",

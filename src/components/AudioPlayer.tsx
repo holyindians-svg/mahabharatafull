@@ -5,7 +5,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Headphones, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { Headphones, Loader2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { askAi } from "@/lib/ask-ai";
@@ -62,6 +62,8 @@ interface AudioPlayerProps {
 }
 
 
+
+const MSG_LOAD = "Nelze načíst zvuk, zkuste to prosím znovu.";
 
 const SPEEDS = [1, 1.25, 1.5] as const;
 
@@ -124,6 +126,26 @@ export function AudioPlayer({
   callbacks.current = { onFinished, onSegment, onTimeSection, chapters, title };
   const timeSection = useRef<number | null>(null);
   const stopAt = useRef<number | null>(null);
+  const [buffering, setBufferingState] = useState(false);
+  const bufferTimer = useRef<number | null>(null);
+  const setBuffering = (on: boolean) => {
+    setBufferingState(on);
+    if (bufferTimer.current !== null) window.clearTimeout(bufferTimer.current);
+    bufferTimer.current = null;
+    if (on) {
+      bufferTimer.current = window.setTimeout(() => {
+        bufferTimer.current = null;
+        setBufferingState(false);
+        setPlaying(false);
+        try {
+          audioEl.current?.pause();
+        } catch {
+          // nic
+        }
+        setError(MSG_LOAD);
+      }, 15000);
+    }
+  };
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(fallbackDuration);
@@ -236,7 +258,32 @@ export function AudioPlayer({
       if (stopAt.current !== null && !el.paused && el.currentTime >= stopAt.current) onTime();
     }, 100);
     el.addEventListener("ended", onEnded);
+    const onReady = () => {
+      if (!el.paused) {
+        setBuffering(false);
+        setError(null);
+      }
+    };
+    const onWait = () => {
+      if (!el.paused) setBuffering(true);
+    };
+    const onErr = () => {
+      setBuffering(false);
+      setPlaying(false);
+      setError(MSG_LOAD);
+    };
+    el.addEventListener("playing", onReady);
+    el.addEventListener("canplay", onReady);
+    el.addEventListener("waiting", onWait);
+    el.addEventListener("seeking", onWait);
+    el.addEventListener("error", onErr);
     return () => {
+      el.removeEventListener("playing", onReady);
+      el.removeEventListener("canplay", onReady);
+      el.removeEventListener("waiting", onWait);
+      el.removeEventListener("seeking", onWait);
+      el.removeEventListener("error", onErr);
+      setBuffering(false);
       el.removeEventListener("loadedmetadata", onMeta);
       el.removeEventListener("timeupdate", onTime);
       window.clearInterval(stopTimer);
@@ -282,7 +329,13 @@ export function AudioPlayer({
     el.muted = muted;
     el.volume = volume;
     setPlaying(true);
-    void el.play().catch(() => setPlaying(false));
+    setError(null);
+    setBuffering(true);
+    void el.play().catch(() => {
+      setBuffering(false);
+      setPlaying(false);
+      setError(MSG_LOAD);
+    });
   };
   if (controlRef) controlRef.current = { playRange };
 
@@ -543,14 +596,18 @@ export function AudioPlayer({
         el.pause();
         saveAudioTime(el.currentTime, true);
         setPlaying(false);
+        setBuffering(false);
       } else {
         stopAt.current = null;
         el.playbackRate = speed;
         el.muted = muted;
         el.volume = volume;
         setPlaying(true);
+        setError(null);
+        setBuffering(true);
         void el.play().catch(() => {
-          setError("Zvuk se nepodařilo spustit. Zkuste to znovu.");
+          setBuffering(false);
+          setError(MSG_LOAD);
           setPlaying(false);
         });
       }
@@ -738,9 +795,12 @@ export function AudioPlayer({
           type="button"
           onClick={togglePlay}
           aria-label={playing ? "Pozastavit předčítání" : "Spustit předčítání"}
-          className="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-busy={buffering || undefined}
+          className="press grid size-12 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {playing ? <Pause className="size-5" /> : <Play className="size-5 translate-x-[1px]" />}
+          {buffering ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : playing ? <Pause className="size-5" /> : <Play className="size-5 translate-x-[1px]" />}
         </button>
 
         <div className="min-w-0 flex-1">
@@ -777,7 +837,7 @@ export function AudioPlayer({
               type="button"
               onClick={() => setSpeed(s)}
               className={cn(
-                "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                "press min-h-11 min-w-11 rounded-md border px-2.5 py-1 text-xs transition-colors",
                 speed === s
                   ? "border-primary/60 bg-primary/15 text-primary"
                   : "border-border text-muted-foreground hover:text-foreground",
