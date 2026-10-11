@@ -4,7 +4,7 @@ import { Scroll } from "lucide-react";
 import { getParva, parvas } from "@/data/parvas";
 import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
-import { AudioPlayer } from "@/components/AudioPlayer";
+import { AudioPlayer, type AudioPlayerHandle } from "@/components/AudioPlayer";
 import { narrationFor } from "@/data/narrations";
 import { audiobookFor } from "@/data/audiobooks";
 import { onBookUpdated } from "@/lib/text-store";
@@ -108,7 +108,7 @@ function BookDetail() {
   const [autoNext, setAutoNext] = useState(false);
   const [playingSection, setPlayingSection] = useState<number | null>(null);
   const audioBook = audiobookFor(parva.slug);
-  const [seekTo, setSeekTo] = useState<{ time: number; nonce: number } | undefined>(undefined);
+  const playerRef = useRef<AudioPlayerHandle | null>(null);
   const chapters = useMemo(
     () =>
       audioBook
@@ -126,7 +126,7 @@ function BookDetail() {
       // Oddíl je úsek sdílené nahrávky: skok v hlavním přehrávači, bez TTS.
       setSelectedState(null);
       setPlayingSection(i);
-      setSeekTo((p) => ({ time: timed.startTime, nonce: (p?.nonce ?? 0) + 1 }));
+      playerRef.current?.playRange(timed.startTime, timed.endTime);
       return;
     }
     setSelectedState(i);
@@ -260,7 +260,7 @@ function BookDetail() {
               onSegment={sections.length ? (seg) => setPlayingSection(sectionAt(seg)) : undefined}
               audioUrl={audioBook?.audioUrl}
               chapters={chapters}
-              seekTo={seekTo}
+              controlRef={playerRef}
               onTimeSection={audioBook ? (i) => setPlayingSection(i) : undefined}
             />
 
@@ -272,7 +272,7 @@ function BookDetail() {
                     type="button"
                     onClick={() => {
                       setSelected(null);
-                      if (audioBook) setSeekTo((p) => ({ time: 0, nonce: (p?.nonce ?? 0) + 1 }));
+                      if (audioBook) playerRef.current?.playRange(0);
                     }}
                     className={cn(
                       "rounded-md border px-2.5 py-1 text-xs transition-colors",
