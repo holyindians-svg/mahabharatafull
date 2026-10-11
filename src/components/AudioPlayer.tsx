@@ -49,8 +49,8 @@ interface AudioPlayerProps {
   /** Přepnutí na předchozí / další část z zamčené obrazovky. */
   onPrev?: (() => void) | undefined;
   onNext?: (() => void) | undefined;
-  /** Skok v nahrávce na daný čas a spuštění (nonce = nový požadavek). */
-  seekTo?: { time: number; nonce: number } | undefined;
+  /** Ovládání zvenčí: skok a přehrání úseku přímo v kliknutí. */
+  controlRef?: { current: AudioPlayerHandle | null } | undefined;
   /** Časové úseky oddílů ve sdílené nahrávce. */
   chapters?: { index: number; title: string; startTime: number; endTime: number }[] | undefined;
   /** Ohlásí oddíl, ve kterém je právě čas nahrávky. */
@@ -112,7 +112,7 @@ export function AudioPlayer({
   onSegment,
   onPrev,
   onNext,
-  seekTo,
+  controlRef,
   chapters,
   onTimeSection,
 }: AudioPlayerProps) {
@@ -187,6 +187,12 @@ export function AudioPlayer({
     const onTime = () => {
       setPosition(el.currentTime);
       saveAudioTime(el.currentTime);
+      if (stopAt.current !== null && el.currentTime >= stopAt.current) {
+        stopAt.current = null;
+        el.pause();
+        setPlaying(false);
+        saveAudioTime(el.currentTime, true);
+      }
       const list = callbacks.current.chapters;
       if (list?.length) {
         const t = el.currentTime;
@@ -235,28 +241,40 @@ export function AudioPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioUrl]);
 
-  // Skok na čas oddílu ve sdílené nahrávce (audio se nevytváří znovu).
-  useEffect(() => {
-    if (!seekTo || !audioMode) return;
-    const el = audioEl.current;
-    if (!el) return;
-    pendingTime.current = null;
-    timeSection.current = null;
-    try {
-      el.currentTime = seekTo.time;
-    } catch {
-      pendingTime.current = seekTo.time;
+  /**
+   * Skok a přehrání úseku — volá se synchronně přímo z kliknutí (gesto pro iOS).
+   * `end` = režim „tento oddíl“ (pauza na konci), bez něj hraje celá kniha.
+   */
+  const playRange = (start: number, end?: number) => {
+    if (!audioUrl) return;
+    let el = audioEl.current;
+    if (!el) {
+      el = new Audio();
+      el.preload = "metadata";
+      audioEl.current = el;
     }
-    setPosition(seekTo.time);
+    if (!el.getAttribute("src")) el.src = audioUrl;
+    stopAt.current = end ?? null;
+    timeSection.current = null;
+    if (el.readyState >= 1) {
+      pendingTime.current = null;
+      el.currentTime = start;
+    } else {
+      pendingTime.current = start;
+      try {
+        el.currentTime = start;
+      } catch {
+        // použije se po načtení metadat
+      }
+    }
+    setPosition(start);
     el.playbackRate = speed;
     el.muted = muted;
     el.volume = volume;
-    void el
-      .play()
-      .then(() => setPlaying(true))
-      .catch(() => setPlaying(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seekTo?.nonce]);
+    setPlaying(true);
+    void el.play().catch(() => setPlaying(false));
+  };
+  if (controlRef) controlRef.current = { playRange };
 
 
   /** Uloží pozici v knize do paměti zařízení. */
@@ -516,6 +534,7 @@ export function AudioPlayer({
         saveAudioTime(el.currentTime, true);
         setPlaying(false);
       } else {
+        stopAt.current = null;
         el.playbackRate = speed;
         el.muted = muted;
         el.volume = volume;
