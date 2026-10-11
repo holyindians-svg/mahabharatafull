@@ -49,6 +49,12 @@ interface AudioPlayerProps {
   /** Přepnutí na předchozí / další část z zamčené obrazovky. */
   onPrev?: (() => void) | undefined;
   onNext?: (() => void) | undefined;
+  /** Skok v nahrávce na daný čas a spuštění (nonce = nový požadavek). */
+  seekTo?: { time: number; nonce: number } | undefined;
+  /** Časové úseky oddílů ve sdílené nahrávce. */
+  chapters?: { index: number; title: string; startTime: number; endTime: number }[] | undefined;
+  /** Ohlásí oddíl, ve kterém je právě čas nahrávky. */
+  onTimeSection?: ((index: number) => void) | undefined;
 }
 
 
@@ -106,9 +112,13 @@ export function AudioPlayer({
   onSegment,
   onPrev,
   onNext,
+  seekTo,
+  chapters,
+  onTimeSection,
 }: AudioPlayerProps) {
-  const callbacks = useRef({ onFinished, onSegment });
-  callbacks.current = { onFinished, onSegment };
+  const callbacks = useRef({ onFinished, onSegment, onTimeSection, chapters, title });
+  callbacks.current = { onFinished, onSegment, onTimeSection, chapters, title };
+  const timeSection = useRef<number | null>(null);
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(fallbackDuration);
@@ -177,6 +187,31 @@ export function AudioPlayer({
     const onTime = () => {
       setPosition(el.currentTime);
       saveAudioTime(el.currentTime);
+      const list = callbacks.current.chapters;
+      if (list?.length) {
+        const t = el.currentTime;
+        let found: (typeof list)[number] | undefined = list.find(
+          (c) => t >= c.startTime && t < c.endTime,
+        );
+        if (!found) found = [...list].reverse().find((c) => t >= c.startTime);
+        if (found && found.index !== timeSection.current) {
+          timeSection.current = found.index;
+          callbacks.current.onTimeSection?.(found.index);
+          try {
+            const ms = navigator.mediaSession;
+            if (ms && typeof MediaMetadata !== "undefined") {
+              ms.metadata = new MediaMetadata({
+                title: found.title,
+                album: callbacks.current.title,
+                artist: "Mahábhárata",
+                artwork: [{ src: "/icon-512.png", sizes: "512x512", type: "image/png" }],
+              });
+            }
+          } catch {
+            // Media Session nedostupná
+          }
+        }
+      }
     };
     const onEnded = () => {
       setPlaying(false);
@@ -199,6 +234,30 @@ export function AudioPlayer({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioUrl]);
+
+  // Skok na čas oddílu ve sdílené nahrávce (audio se nevytváří znovu).
+  useEffect(() => {
+    if (!seekTo || !audioMode) return;
+    const el = audioEl.current;
+    if (!el) return;
+    pendingTime.current = null;
+    timeSection.current = null;
+    try {
+      el.currentTime = seekTo.time;
+    } catch {
+      pendingTime.current = seekTo.time;
+    }
+    setPosition(seekTo.time);
+    el.playbackRate = speed;
+    el.muted = muted;
+    el.volume = volume;
+    void el
+      .play()
+      .then(() => setPlaying(true))
+      .catch(() => setPlaying(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seekTo?.nonce]);
+
 
   /** Uloží pozici v knize do paměti zařízení. */
   const currentProgress = useRef({ index: null as number | null, charIndex: 0 });

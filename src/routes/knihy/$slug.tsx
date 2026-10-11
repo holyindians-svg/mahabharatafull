@@ -6,6 +6,7 @@ import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { narrationFor } from "@/data/narrations";
+import { audiobookFor } from "@/data/audiobooks";
 import { onBookUpdated } from "@/lib/text-store";
 import {
   bookFallback,
@@ -23,12 +24,6 @@ import { BackLink, Chip, Page, Section } from "@/components/Bits";
 /** Knihy s klikatelným menu oddílů. */
 const SECTION_NAV_BOOKS = ["adi-parva", "sabha-parva", "vana-parva"];
 
-/** Nahrané MP3 pro konkrétní oddíly (kniha → index první věty oddílu → URL). */
-const AUDIO_SECTION_SOURCES: Record<string, Record<number, string>> = {
-  "adi-parva": {
-    0: "https://ckcnmvnjxziekezhzozh.supabase.co/storage/v1/object/public/audiobooks/ElevenLabs_2026-10-10T10_28_14_Roger%20-%20Laid-Back,%20Casual,%20Resonant_pre_sp100_s50_sb75_v4.mp3",
-  },
-};
 
 /** Krátký popisek tlačítka oddílu v tematicky seskupeném seznamu. */
 function shortLabel(title: string): string {
@@ -112,8 +107,28 @@ function BookDetail() {
   const [selected, setSelectedState] = useState<number | null>(null);
   const [autoNext, setAutoNext] = useState(false);
   const [playingSection, setPlayingSection] = useState<number | null>(null);
+  const audioBook = audiobookFor(parva.slug);
+  const [seekTo, setSeekTo] = useState<{ time: number; nonce: number } | undefined>(undefined);
+  const chapters = useMemo(
+    () =>
+      audioBook
+        ? sections.flatMap((s, i) => {
+            const t = audioBook.sections[i];
+            return t ? [{ index: i, title: s.title, ...t }] : [];
+          })
+        : undefined,
+    [audioBook, sections],
+  );
   const setSelected = (i: number | null) => {
     setAutoNext(false);
+    const timed = i !== null ? audioBook?.sections[i] : undefined;
+    if (timed && i !== null) {
+      // Oddíl je úsek sdílené nahrávky: skok v hlavním přehrávači, bez TTS.
+      setSelectedState(null);
+      setPlayingSection(i);
+      setSeekTo((p) => ({ time: timed.startTime, nonce: (p?.nonce ?? 0) + 1 }));
+      return;
+    }
     setSelectedState(i);
   };
   const selectedRef = useRef<number | null>(null);
@@ -239,10 +254,14 @@ function BookDetail() {
               presetText={narrationFor("parva", parva.slug)}
               segments={book?.segments}
               paragraphIndex={book?.paragraphIndex}
-              progressKey={hasFullText ? `book:${parva.slug}` : undefined}
+              progressKey={
+                audioBook ? `book:${parva.slug}:mp3` : hasFullText ? `book:${parva.slug}` : undefined
+              }
               onSegment={sections.length ? (seg) => setPlayingSection(sectionAt(seg)) : undefined}
-
-
+              audioUrl={audioBook?.audioUrl}
+              chapters={chapters}
+              seekTo={seekTo}
+              onTimeSection={audioBook ? (i) => setPlayingSection(i) : undefined}
             />
 
             {sections.length ? (
@@ -251,7 +270,10 @@ function BookDetail() {
                   <p className="text-[11px] uppercase tracking-[0.22em] text-primary">Oddíly</p>
                   <button
                     type="button"
-                    onClick={() => setSelected(null)}
+                    onClick={() => {
+                      setSelected(null);
+                      if (audioBook) setSeekTo((p) => ({ time: 0, nonce: (p?.nonce ?? 0) + 1 }));
+                    }}
                     className={cn(
                       "rounded-md border px-2.5 py-1 text-xs transition-colors",
                       selected === null
@@ -321,8 +343,7 @@ function BookDetail() {
                 minutes={sectionMinutes}
                 segments={sectionBook.segments}
                 paragraphIndex={sectionBook.paragraphIndex}
-                audioUrl={AUDIO_SECTION_SOURCES[parva.slug]?.[sections.indexOf(section)]}
-                progressKey={`book:${parva.slug}:section:${AUDIO_SECTION_SOURCES[parva.slug]?.[sections.indexOf(section)] ? "mp3:" : ""}${section.fromSegment}`}
+                progressKey={`book:${parva.slug}:section:${section.fromSegment}`}
                 autoStart={autoNext}
                 onFinished={() => selectedRef.current !== null && goToSection(selectedRef.current + 1)}
                 onPrev={() => selectedRef.current !== null && goToSection(selectedRef.current - 1)}
