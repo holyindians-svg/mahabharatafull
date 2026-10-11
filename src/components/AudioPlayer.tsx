@@ -19,7 +19,7 @@ import {
 } from "@/lib/speak";
 
 export interface AudioPlayerHandle {
-  playRange: (start: number, end?: number) => void;
+  playRange: (start: number) => void;
 }
 
 interface AudioPlayerProps {
@@ -62,6 +62,15 @@ interface AudioPlayerProps {
 }
 
 
+
+/** MP3 má absolutní přednost: hlas zařízení musí okamžitě zmlknout. */
+function killSpeech() {
+  try {
+    window.speechSynthesis?.cancel();
+  } catch {
+    // nic
+  }
+}
 
 const MSG_LOAD = "Nelze načíst zvuk, zkuste to prosím znovu.";
 
@@ -125,7 +134,6 @@ export function AudioPlayer({
   const callbacks = useRef({ onFinished, onSegment, onTimeSection, chapters, title });
   callbacks.current = { onFinished, onSegment, onTimeSection, chapters, title };
   const timeSection = useRef<number | null>(null);
-  const stopAt = useRef<number | null>(null);
   const [buffering, setBufferingState] = useState(false);
   const bufferTimer = useRef<number | null>(null);
   const setBuffering = (on: boolean) => {
@@ -214,12 +222,6 @@ export function AudioPlayer({
     const onTime = () => {
       setPosition(el.currentTime);
       saveAudioTime(el.currentTime);
-      if (stopAt.current !== null && el.currentTime >= stopAt.current) {
-        stopAt.current = null;
-        el.pause();
-        setPlaying(false);
-        saveAudioTime(el.currentTime, true);
-      }
       const list = callbacks.current.chapters;
       if (list?.length) {
         const t = el.currentTime;
@@ -254,9 +256,6 @@ export function AudioPlayer({
     el.addEventListener("loadedmetadata", onMeta);
     el.addEventListener("timeupdate", onTime);
     // Přesnější hlídání konce oddílu (timeupdate chodí jen po ~250 ms i řidčeji).
-    const stopTimer = window.setInterval(() => {
-      if (stopAt.current !== null && !el.paused && el.currentTime >= stopAt.current) onTime();
-    }, 100);
     el.addEventListener("ended", onEnded);
     const onReady = () => {
       if (!el.paused) {
@@ -286,7 +285,6 @@ export function AudioPlayer({
       setBuffering(false);
       el.removeEventListener("loadedmetadata", onMeta);
       el.removeEventListener("timeupdate", onTime);
-      window.clearInterval(stopTimer);
       el.removeEventListener("ended", onEnded);
       try {
         el.pause();
@@ -302,8 +300,9 @@ export function AudioPlayer({
    * Skok a přehrání úseku — volá se synchronně přímo z kliknutí (gesto pro iOS).
    * `end` = režim „tento oddíl“ (pauza na konci), bez něj hraje celá kniha.
    */
-  const playRange = (start: number, end?: number) => {
+  const playRange = (start: number) => {
     if (!audioUrl) return;
+    killSpeech();
     let el = audioEl.current;
     if (!el) {
       el = new Audio();
@@ -311,7 +310,6 @@ export function AudioPlayer({
       audioEl.current = el;
     }
     if (!el.getAttribute("src")) el.src = audioUrl;
-    stopAt.current = end ?? null;
     timeSection.current = null;
     if (el.readyState >= 1) {
       pendingTime.current = null;
@@ -590,6 +588,7 @@ export function AudioPlayer({
   const togglePlay = () => {
     void primeAudioPlayback();
     if (audioMode) {
+      killSpeech();
       const el = audioEl.current;
       if (!el) return;
       if (playing) {
@@ -598,7 +597,6 @@ export function AudioPlayer({
         setPlaying(false);
         setBuffering(false);
       } else {
-        stopAt.current = null;
         el.playbackRate = speed;
         el.muted = muted;
         el.volume = volume;

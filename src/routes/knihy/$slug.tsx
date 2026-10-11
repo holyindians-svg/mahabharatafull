@@ -109,6 +109,7 @@ function BookDetail() {
   const [playingSection, setPlayingSection] = useState<number | null>(null);
   const audioBook = audiobookFor(parva.slug);
   const playerRef = useRef<AudioPlayerHandle | null>(null);
+  const [missingTime, setMissingTime] = useState(false);
   const chapters = useMemo(
     () =>
       audioBook
@@ -121,14 +122,16 @@ function BookDetail() {
   );
   const setSelected = (i: number | null) => {
     setAutoNext(false);
-    const timed = i !== null ? audioBook?.sections[i] : undefined;
-    if (timed && i !== null) {
-      // Oddíl je úsek sdílené nahrávky: skok v hlavním přehrávači, bez TTS.
+    if (audioBook && i !== null) {
+      // Kniha má MP3: oddíl je jen časový úsek v ní, hlas zařízení se nespouští.
       setSelectedState(null);
       setPlayingSection(i);
-      playerRef.current?.playRange(timed.startTime, timed.endTime);
+      const timed = audioBook.sections[i];
+      setMissingTime(!timed);
+      if (timed) playerRef.current?.playRange(timed.startTime);
       return;
     }
+    setMissingTime(false);
     setSelectedState(i);
   };
   const selectedRef = useRef<number | null>(null);
@@ -345,6 +348,11 @@ function BookDetail() {
                     ))}
                   </div>
                 )}
+                {missingTime ? (
+                  <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                    Pro tento oddíl zatím chybí časová značka v nahrávce.
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
