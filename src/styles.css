@@ -251,3 +251,22 @@
     break-inside: avoid;
   }
 }
+
+@layer base {
+  button,
+  [role="button"],
+  [role="slider"],
+  a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@utility press {
+  transition-property: transform, opacity, color, background-color, border-color;
+  transition-duration: 120ms;
+  &:active {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+}
