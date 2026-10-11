@@ -49,6 +49,12 @@ interface AudioPlayerProps {
   /** Přepnutí na předchozí / další část z zamčené obrazovky. */
   onPrev?: (() => void) | undefined;
   onNext?: (() => void) | undefined;
+  /** Skok v nahrávce na daný čas a spuštění (nonce = nový požadavek). */
+  seekTo?: { time: number; nonce: number } | undefined;
+  /** Časové úseky oddílů ve sdílené nahrávce. */
+  chapters?: { index: number; title: string; startTime: number; endTime: number }[] | undefined;
+  /** Ohlásí oddíl, ve kterém je právě čas nahrávky. */
+  onTimeSection?: ((index: number) => void) | undefined;
 }
 
 
@@ -106,9 +112,13 @@ export function AudioPlayer({
   onSegment,
   onPrev,
   onNext,
+  seekTo,
+  chapters,
+  onTimeSection,
 }: AudioPlayerProps) {
-  const callbacks = useRef({ onFinished, onSegment });
-  callbacks.current = { onFinished, onSegment };
+  const callbacks = useRef({ onFinished, onSegment, onTimeSection, chapters, title });
+  callbacks.current = { onFinished, onSegment, onTimeSection, chapters, title };
+  const timeSection = useRef<number | null>(null);
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(fallbackDuration);
