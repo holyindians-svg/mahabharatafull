@@ -157,7 +157,7 @@ function BookDetail() {
   };
   const touchGuard = { onTouchStart: markTouch, onTouchMove: markTouch, onWheel: markTouch, onPointerDown: markTouch };
   useEffect(() => {
-    if (highlighted === null) return;
+    if (highlighted === null) return undefined;
     const idle = Date.now() - lastTouch.current;
     if (idle < 4000) {
       // Uživatel právě posouvá prstem — posun počká.
@@ -166,7 +166,7 @@ function BookDetail() {
     }
     const box = listRef.current;
     const btn = box?.querySelector<HTMLElement>(`[data-section="${highlighted}"]`);
-    if (!box || !btn) return;
+    if (!box || !btn) return undefined;
     const b = box.getBoundingClientRect();
     const r = btn.getBoundingClientRect();
     if (r.top < b.top + 8 || r.bottom > b.bottom - 8) {
@@ -175,6 +175,7 @@ function BookDetail() {
         behavior: "smooth",
       });
     }
+    return undefined;
   }, [highlighted, scrollRetry]);
   const section = selected !== null ? sections[selected] : undefined;
   const sectionBook = useMemo(() => {
