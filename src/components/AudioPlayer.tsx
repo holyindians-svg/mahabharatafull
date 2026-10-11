@@ -18,6 +18,10 @@ import {
   type SpeakHandle,
 } from "@/lib/speak";
 
+export interface AudioPlayerHandle {
+  playRange: (start: number, end?: number) => void;
+}
+
 interface AudioPlayerProps {
   title: string;
   subtitle?: string;
@@ -119,6 +123,7 @@ export function AudioPlayer({
   const callbacks = useRef({ onFinished, onSegment, onTimeSection, chapters, title });
   callbacks.current = { onFinished, onSegment, onTimeSection, chapters, title };
   const timeSection = useRef<number | null>(null);
+  const stopAt = useRef<number | null>(null);
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(fallbackDuration);
