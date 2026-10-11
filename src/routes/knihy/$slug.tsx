@@ -348,6 +348,11 @@ function BookDetail() {
                     ))}
                   </div>
                 )}
+                {missingTime ? (
+                  <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                    Pro tento oddíl zatím chybí časová značka v nahrávce.
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
