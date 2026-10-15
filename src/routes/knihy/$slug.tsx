@@ -143,7 +143,6 @@ function BookDetail() {
   };
   const changeReaderOpen = (open: boolean) => {
     setReaderOpen(open);
-    if (!open) requestAnimationFrame(() => expandRef.current?.focus());
   };
   const setSelected = (i: number | null) => {
     setAutoNext(false);
@@ -317,6 +316,7 @@ function BookDetail() {
                   number={Number(/(\d+)/.exec(readerChapter.title)?.[1])}
                   cuesUrl={audioBook.cuesUrl} range={readerChapter} time={audioTime} playback={playback}
                   onToggle={() => playerRef.current?.togglePlay()}
+                  onAfterClose={() => expandRef.current?.focus()}
                   onSeek={(time) => playerRef.current?.seekPreservingPlayback(time)} />
               </>
             ) : null}

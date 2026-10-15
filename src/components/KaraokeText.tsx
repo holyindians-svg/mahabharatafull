@@ -83,7 +83,7 @@ export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek }
       className={cn("min-h-0 overflow-y-auto overscroll-contain focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
         immersive ? "flex-1 px-6 sm:px-10" : "mt-4 max-h-[28rem] pr-1 text-[15px] leading-relaxed")}
     >
-      <div className={cn(immersive ? "mx-auto max-w-3xl space-y-7 py-[max(2rem,15dvh)] text-xl leading-9 sm:text-2xl sm:leading-10" : "space-y-3")}>
+      <div className={cn(immersive ? "mx-auto max-w-3xl space-y-7 py-[40dvh] text-xl leading-9 sm:text-2xl sm:leading-10" : "space-y-3")}>
         {failed ? <p role="alert" className="text-muted-foreground">Text oddílu se nepodařilo načíst.</p>
           : !cues ? <p role="status" className="text-muted-foreground">Načítám text…</p>
           : !cues.length ? <p className="text-muted-foreground">Text oddílu není dostupný.</p>

@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Přidat celoobrazovkovou karaoke čtečku s nepřerušovaným audiem a společnými ovládacími prvky.
-- [ ] Ověřit čtečku, navazování oddílů a ovládání na rozměrech telefonu, tabletu a počítače.
+- [x] Přidat celoobrazovkovou karaoke čtečku s nepřerušovaným audiem a společnými ovládacími prvky.
+- [x] Ověřit čtečku, navazování oddílů a ovládání na rozměrech telefonu, tabletu a počítače.
 
 - [x] Nahradit všechny fotografie původními mytologickými ilustracemi.
 - [x] Přiřadit konkrétní obraz každé knize, postavě a astře.

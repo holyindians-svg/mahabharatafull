@@ -18,15 +18,16 @@ interface Props {
   playback: AudioPlaybackState;
   onToggle: () => void;
   onSeek: (time: number) => void;
+  onAfterClose: () => void;
 }
 
-export function ImmersiveReader({ open, onOpenChange, bookName, title, number, cuesUrl, range, time, playback, onToggle, onSeek }: Props) {
+export function ImmersiveReader({ open, onOpenChange, bookName, title, number, cuesUrl, range, time, playback, onToggle, onSeek, onAfterClose }: Props) {
   const { elapsed, duration } = sectionProgress(time, range);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 motion-reduce:animate-none" />
-        <Dialog.Content aria-describedby={undefined}
+        <Dialog.Content aria-describedby={undefined} onCloseAutoFocus={(event) => { event.preventDefault(); onAfterClose(); }}
           className="fixed inset-0 z-[101] flex h-dvh min-h-0 flex-col overflow-hidden bg-background text-foreground outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-bottom-2 motion-reduce:animate-none">
           <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-8">
             <div className="min-w-0">
@@ -50,13 +51,13 @@ export function ImmersiveReader({ open, onOpenChange, bookName, title, number, c
                 <span className="min-w-14 text-xs tabular-nums text-muted-foreground sm:text-sm">{readerClock(elapsed)}</span>
                 <div className="flex items-center gap-4 sm:gap-6">
                   <Button variant="ghost" size="icon" className="press size-11" title="Zpět o 15 sekund" aria-label="Zpět o 15 sekund"
-                    onClick={() => onSeek(skipSectionTime(time, -15, range))}><RotateCcw /><span className="sr-only">15</span></Button>
+                    onClick={() => onSeek(skipSectionTime(time, -15, range))}><span className="flex flex-col items-center"><RotateCcw /><span className="text-[10px] leading-3">15</span></span></Button>
                   <Button size="icon" className="press size-14 rounded-full [&_svg]:size-6" aria-label={playback.playing ? "Pozastavit audio" : "Přehrát audio"}
                     aria-busy={playback.buffering || undefined} onClick={onToggle}>
                     {playback.buffering ? <Loader2 className="animate-spin motion-reduce:animate-none" /> : playback.playing ? <Pause /> : <Play />}
                   </Button>
                   <Button variant="ghost" size="icon" className="press size-11" title="Vpřed o 15 sekund" aria-label="Vpřed o 15 sekund"
-                    onClick={() => onSeek(skipSectionTime(time, 15, range))}><RotateCw /><span className="sr-only">15</span></Button>
+                    onClick={() => onSeek(skipSectionTime(time, 15, range))}><span className="flex flex-col items-center"><RotateCw /><span className="text-[10px] leading-3">15</span></span></Button>
                 </div>
                 <span className="min-w-14 text-right text-xs tabular-nums text-muted-foreground sm:text-sm">{readerClock(duration)}</span>
               </div>
