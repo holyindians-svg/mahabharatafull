@@ -19,7 +19,9 @@ import {
 } from "@/lib/speak";
 
 export interface AudioPlayerHandle {
-  playRange: (start: number) => void;
+  /** `end` = pauza na konci úseku (režim „Přehrát oddíl“). */
+  playRange: (start: number, end?: number) => void;
+  seek: (t: number) => void;
 }
 
 interface AudioPlayerProps {
@@ -59,6 +61,8 @@ interface AudioPlayerProps {
   chapters?: { index: number; title: string; startTime: number; endTime: number }[] | undefined;
   /** Ohlásí oddíl, ve kterém je právě čas nahrávky. */
   onTimeSection?: ((index: number) => void) | undefined;
+  /** Aktuální čas nahrávky (pro karaoke titulky). */
+  onTime?: ((t: number) => void) | undefined;
 }
 
 
@@ -130,10 +134,12 @@ export function AudioPlayer({
   controlRef,
   chapters,
   onTimeSection,
+  onTime,
 }: AudioPlayerProps) {
-  const callbacks = useRef({ onFinished, onSegment, onTimeSection, chapters, title });
-  callbacks.current = { onFinished, onSegment, onTimeSection, chapters, title };
+  const callbacks = useRef({ onFinished, onSegment, onTimeSection, onTime, chapters, title });
+  callbacks.current = { onFinished, onSegment, onTimeSection, onTime, chapters, title };
   const timeSection = useRef<number | null>(null);
+  const stopAt = useRef<number | null>(null);
   const [buffering, setBufferingState] = useState(false);
   const bufferTimer = useRef<number | null>(null);
   const setBuffering = (on: boolean) => {
@@ -222,6 +228,12 @@ export function AudioPlayer({
     const onTime = () => {
       setPosition(el.currentTime);
       saveAudioTime(el.currentTime);
+      if (stopAt.current !== null && el.currentTime >= stopAt.current) {
+        stopAt.current = null;
+        el.pause();
+        setPlaying(false);
+      }
+      callbacks.current.onTime?.(el.currentTime);
       const list = callbacks.current.chapters;
       if (list?.length) {
         const t = el.currentTime;
@@ -300,9 +312,10 @@ export function AudioPlayer({
    * Skok a přehrání úseku — volá se synchronně přímo z kliknutí (gesto pro iOS).
    * `end` = režim „tento oddíl“ (pauza na konci), bez něj hraje celá kniha.
    */
-  const playRange = (start: number) => {
+  const playRange = (start: number, end?: number) => {
     if (!audioUrl) return;
     killSpeech();
+    stopAt.current = end ?? null;
     let el = audioEl.current;
     if (!el) {
       el = new Audio();
@@ -335,7 +348,16 @@ export function AudioPlayer({
       setError(MSG_LOAD);
     });
   };
-  if (controlRef) controlRef.current = { playRange };
+  const seek = (t: number) => {
+    const el = audioEl.current;
+    if (!el || el.paused) {
+      playRange(t, stopAt.current ?? undefined);
+      return;
+    }
+    el.currentTime = t;
+    setPosition(t);
+  };
+  if (controlRef) controlRef.current = { playRange, seek };
 
 
   /** Uloží pozici v knize do paměti zařízení. */
@@ -597,6 +619,7 @@ export function AudioPlayer({
         setPlaying(false);
         setBuffering(false);
       } else {
+        stopAt.current = null;
         el.playbackRate = speed;
         el.muted = muted;
         el.volume = volume;
