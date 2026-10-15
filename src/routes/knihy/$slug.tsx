@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { Scroll } from "lucide-react";
+import { Maximize2, Scroll } from "lucide-react";
 import { getParva, parvas } from "@/data/parvas";
 import { getCharacter } from "@/data/characters";
 import { EntityCard } from "@/components/EntityCard";
-import { AudioPlayer, type AudioPlayerHandle } from "@/components/AudioPlayer";
+import { AudioPlayer, type AudioPlayerHandle, type AudioPlaybackState } from "@/components/AudioPlayer";
+import { ImmersiveReader } from "@/components/ImmersiveReader";
+import { Button } from "@/components/ui/button";
 import { narrationFor } from "@/data/narrations";
 import { audiobookFor } from "@/data/audiobooks";
 import { AudioSectionDetail } from "@/components/AudioSectionDetail";
@@ -113,6 +115,9 @@ function BookDetail() {
   const [missingTime, setMissingTime] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
   const [audioTime, setAudioTime] = useState(0);
+  const [readerOpen, setReaderOpen] = useState(false);
+  const [playback, setPlayback] = useState<AudioPlaybackState>({ playing: false, buffering: false, error: null });
+  const expandRef = useRef<HTMLButtonElement | null>(null);
   const timeOf = (i: number) => {
     const n = /(\d+)/.exec(sections[i]?.title ?? "");
     return n && audioBook ? audioBook.sections[Number(n[1])] : undefined;
@@ -128,6 +133,18 @@ function BookDetail() {
         : undefined,
     [audioBook, sections],
   );
+  const readerIndex = playingSection ?? openSection ?? chapters?.[0]?.index;
+  const readerChapter = chapters?.find((chapter) => chapter.index === readerIndex);
+  const detailSection = openSection === null ? undefined : sections[openSection];
+  const expandReader = () => {
+    const focused = document.activeElement;
+    expandRef.current = focused instanceof HTMLButtonElement ? focused : null;
+    setReaderOpen(true);
+  };
+  const changeReaderOpen = (open: boolean) => {
+    setReaderOpen(open);
+    if (!open) requestAnimationFrame(() => expandRef.current?.focus());
+  };
   const setSelected = (i: number | null) => {
     setAutoNext(false);
     if (audioBook && i !== null) {
@@ -288,7 +305,21 @@ function BookDetail() {
               controlRef={playerRef}
               onTimeSection={audioBook ? (i) => setPlayingSection(i) : undefined}
               onTime={audioBook?.cuesUrl ? setAudioTime : undefined}
+              onPlaybackState={audioBook ? setPlayback : undefined}
             />
+            {audioBook?.cuesUrl && readerChapter ? (
+              <>
+                <Button variant="outline" className="press min-h-11 w-full" onClick={expandReader}>
+                  <Maximize2 /> Zvětšit čtečku
+                </Button>
+                <ImmersiveReader open={readerOpen} onOpenChange={changeReaderOpen}
+                  bookName={parva.name} title={readerChapter.title}
+                  number={Number(/(\d+)/.exec(readerChapter.title)?.[1])}
+                  cuesUrl={audioBook.cuesUrl} range={readerChapter} time={audioTime} playback={playback}
+                  onToggle={() => playerRef.current?.togglePlay()}
+                  onSeek={(time) => playerRef.current?.seekPreservingPlayback(time)} />
+              </>
+            ) : null}
 
             {sections.length ? (
               <div className="rounded-xl border border-border bg-surface/70 p-5">
@@ -367,18 +398,19 @@ function BookDetail() {
               </div>
             ) : null}
 
-            {audioBook?.cuesUrl && openSection !== null && sections[openSection] && timeOf(openSection) ? (
+            {audioBook?.cuesUrl && openSection !== null && detailSection && timeOf(openSection) ? (
               <AudioSectionDetail
                 key={openSection}
-                title={sections[openSection]!.title}
-                number={Number(/(\d+)/.exec(sections[openSection]!.title)?.[1])}
+                title={detailSection.title}
+                number={Number(/(\d+)/.exec(detailSection.title)?.[1])}
                 cuesUrl={audioBook.cuesUrl}
                 time={audioTime}
                 onPlaySection={() => {
                   const t = timeOf(openSection);
-                  if (t) playerRef.current?.playRange(t.startTime, t.endTime);
+                  if (t) playerRef.current?.playRange(t.startTime);
                 }}
                 onSeek={(t) => playerRef.current?.seek(t)}
+                onExpand={expandReader}
               />
             ) : null}
 

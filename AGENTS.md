@@ -14,3 +14,5 @@
 - Service worker is vite-plugin-pwa generateSW, registered only from src/lib/pwa-register.ts (never in dev/preview); HTML NetworkFirst, /texty not cached by SW.
 - Text export (TXT/PDF) uses src/lib/export-text.ts with the shared book loaders; PDF is window.print with #print-root and @media print A4 rules.
 - Audiobook section times/cues are generated from SRT by scripts/build-audiobook-srt.mjs into src/data/audiobook-times/<slug>.ts and public/audio-texty/<slug>.json; sections match by the number in their title so text parsing changes can't shift timings.
+- Immersive audiobook readers control the existing mounted AudioPlayer through its handle and playback callbacks; never create or remount audio for a view change, so playback stays uninterrupted.
+- Inline and immersive karaoke share KaraokeText and the canonical cue loader; keep section-relative timing and bounded seek arithmetic in reader-time for consistent controls.
