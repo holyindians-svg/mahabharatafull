@@ -13,3 +13,4 @@
 - Book texts sync via IndexedDB + public/texty/versions.json (regenerate with `node scripts/build-text-versions.mjs` after changing texts); only changed books re-download, so no forced reloads.
 - Service worker is vite-plugin-pwa generateSW, registered only from src/lib/pwa-register.ts (never in dev/preview); HTML NetworkFirst, /texty not cached by SW.
 - Text export (TXT/PDF) uses src/lib/export-text.ts with the shared book loaders; PDF is window.print with #print-root and @media print A4 rules.
+- Audiobook section times/cues are generated from SRT by scripts/build-audiobook-srt.mjs into src/data/audiobook-times/<slug>.ts and public/audio-texty/<slug>.json; sections match by the number in their title so text parsing changes can't shift timings.

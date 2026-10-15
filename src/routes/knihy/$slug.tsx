@@ -7,6 +7,7 @@ import { EntityCard } from "@/components/EntityCard";
 import { AudioPlayer, type AudioPlayerHandle } from "@/components/AudioPlayer";
 import { narrationFor } from "@/data/narrations";
 import { audiobookFor } from "@/data/audiobooks";
+import { AudioSectionDetail } from "@/components/AudioSectionDetail";
 import { onBookUpdated } from "@/lib/text-store";
 import {
   bookFallback,
@@ -110,11 +111,18 @@ function BookDetail() {
   const audioBook = audiobookFor(parva.slug);
   const playerRef = useRef<AudioPlayerHandle | null>(null);
   const [missingTime, setMissingTime] = useState(false);
+  const [openSection, setOpenSection] = useState<number | null>(null);
+  const [audioTime, setAudioTime] = useState(0);
+  const timeOf = (i: number) => {
+    const n = /(\d+)/.exec(sections[i]?.title ?? "");
+    return n && audioBook ? audioBook.sections[Number(n[1])] : undefined;
+  };
   const chapters = useMemo(
     () =>
       audioBook
         ? sections.flatMap((s, i) => {
-            const t = audioBook.sections[i];
+            const n = /(\d+)/.exec(s.title);
+            const t = n ? audioBook.sections[Number(n[1])] : undefined;
             return t ? [{ index: i, title: s.title, ...t }] : [];
           })
         : undefined,
@@ -126,7 +134,8 @@ function BookDetail() {
       // Kniha má MP3: oddíl je jen časový úsek v ní, hlas zařízení se nespouští.
       setSelectedState(null);
       setPlayingSection(i);
-      const timed = audioBook.sections[i];
+      setOpenSection(i);
+      const timed = timeOf(i);
       setMissingTime(!timed);
       if (timed) playerRef.current?.playRange(timed.startTime);
       return;
@@ -278,6 +287,7 @@ function BookDetail() {
               chapters={chapters}
               controlRef={playerRef}
               onTimeSection={audioBook ? (i) => setPlayingSection(i) : undefined}
+              onTime={audioBook?.cuesUrl ? setAudioTime : undefined}
             />
 
             {sections.length ? (
@@ -288,6 +298,7 @@ function BookDetail() {
                     type="button"
                     onClick={() => {
                       setSelected(null);
+                      setOpenSection(null);
                       if (audioBook) playerRef.current?.playRange(0);
                     }}
                     className={cn(
@@ -354,6 +365,21 @@ function BookDetail() {
                   </p>
                 ) : null}
               </div>
+            ) : null}
+
+            {audioBook?.cuesUrl && openSection !== null && sections[openSection] && timeOf(openSection) ? (
+              <AudioSectionDetail
+                key={openSection}
+                title={sections[openSection]!.title}
+                number={Number(/(\d+)/.exec(sections[openSection]!.title)?.[1])}
+                cuesUrl={audioBook.cuesUrl}
+                time={audioTime}
+                onPlaySection={() => {
+                  const t = timeOf(openSection);
+                  if (t) playerRef.current?.playRange(t.startTime, t.endTime);
+                }}
+                onSeek={(t) => playerRef.current?.seek(t)}
+              />
             ) : null}
 
             {section && sectionBook ? (
