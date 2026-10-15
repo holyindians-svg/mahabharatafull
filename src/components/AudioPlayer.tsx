@@ -8,6 +8,7 @@ import {
 import { Headphones, Loader2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { chapterAtTime } from "@/lib/reader-time";
 import { askAi } from "@/lib/ask-ai";
 import { setMediaSession } from "@/lib/background-audio";
 import {
@@ -19,9 +20,17 @@ import {
 } from "@/lib/speak";
 
 export interface AudioPlayerHandle {
-  /** `end` = pauza na konci úseku (režim „Přehrát oddíl“). */
-  playRange: (start: number, end?: number) => void;
+  /** Starts continuous playback at an absolute time in the shared recording. */
+  playRange: (start: number) => void;
   seek: (t: number) => void;
+  togglePlay: () => void;
+  seekPreservingPlayback: (t: number) => void;
+}
+
+export interface AudioPlaybackState {
+  playing: boolean;
+  buffering: boolean;
+  error: string | null;
 }
 
 interface AudioPlayerProps {
@@ -63,6 +72,7 @@ interface AudioPlayerProps {
   onTimeSection?: ((index: number) => void) | undefined;
   /** Aktuální čas nahrávky (pro karaoke titulky). */
   onTime?: ((t: number) => void) | undefined;
+  onPlaybackState?: ((state: AudioPlaybackState) => void) | undefined;
 }
 
 
@@ -135,11 +145,11 @@ export function AudioPlayer({
   chapters,
   onTimeSection,
   onTime,
+  onPlaybackState,
 }: AudioPlayerProps) {
   const callbacks = useRef({ onFinished, onSegment, onTimeSection, onTime, chapters, title });
   callbacks.current = { onFinished, onSegment, onTimeSection, onTime, chapters, title };
   const timeSection = useRef<number | null>(null);
-  const stopAt = useRef<number | null>(null);
   const [buffering, setBufferingState] = useState(false);
   const bufferTimer = useRef<number | null>(null);
   const setBuffering = (on: boolean) => {
@@ -170,6 +180,11 @@ export function AudioPlayer({
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const playbackCallback = useRef(onPlaybackState);
+  playbackCallback.current = onPlaybackState;
+  useEffect(() => {
+    playbackCallback.current?.({ playing, buffering, error });
+  }, [playing, buffering, error]);
   const [active, setActive] = useState<number | null>(null);
   const [activeChar, setActiveChar] = useState(0);
   const abort = useRef<AbortController | null>(null);
@@ -228,19 +243,10 @@ export function AudioPlayer({
     const onTime = () => {
       setPosition(el.currentTime);
       saveAudioTime(el.currentTime);
-      if (stopAt.current !== null && el.currentTime >= stopAt.current) {
-        stopAt.current = null;
-        el.pause();
-        setPlaying(false);
-      }
       callbacks.current.onTime?.(el.currentTime);
       const list = callbacks.current.chapters;
       if (list?.length) {
-        const t = el.currentTime;
-        let found: (typeof list)[number] | undefined = list.find(
-          (c) => t >= c.startTime && t < c.endTime,
-        );
-        if (!found) found = [...list].reverse().find((c) => t >= c.startTime);
+        const found = chapterAtTime(el.currentTime, list);
         if (found && found.index !== timeSection.current) {
           timeSection.current = found.index;
           callbacks.current.onTimeSection?.(found.index);
@@ -267,8 +273,15 @@ export function AudioPlayer({
     };
     el.addEventListener("loadedmetadata", onMeta);
     el.addEventListener("timeupdate", onTime);
-    // Přesnější hlídání konce oddílu (timeupdate chodí jen po ~250 ms i řidčeji).
     el.addEventListener("ended", onEnded);
+    const onPlay = () => setPlaying(true);
+    const onPause = () => {
+      setPlaying(false);
+      setBuffering(false);
+      saveAudioTime(el.currentTime, true);
+    };
+    el.addEventListener("play", onPlay);
+    el.addEventListener("pause", onPause);
     const onReady = () => {
       if (!el.paused) {
         setBuffering(false);
@@ -289,6 +302,8 @@ export function AudioPlayer({
     el.addEventListener("seeking", onWait);
     el.addEventListener("error", onErr);
     return () => {
+      el.removeEventListener("play", onPlay);
+      el.removeEventListener("pause", onPause);
       el.removeEventListener("playing", onReady);
       el.removeEventListener("canplay", onReady);
       el.removeEventListener("waiting", onWait);
@@ -310,12 +325,11 @@ export function AudioPlayer({
 
   /**
    * Skok a přehrání úseku — volá se synchronně přímo z kliknutí (gesto pro iOS).
-   * `end` = režim „tento oddíl“ (pauza na konci), bez něj hraje celá kniha.
+   * Oddíly vždy plynule navazují až do konce nahrávky.
    */
-  const playRange = (start: number, end?: number) => {
+  const playRange = (start: number) => {
     if (!audioUrl) return;
     killSpeech();
-    stopAt.current = end ?? null;
     let el = audioEl.current;
     if (!el) {
       el = new Audio();
@@ -351,13 +365,23 @@ export function AudioPlayer({
   const seek = (t: number) => {
     const el = audioEl.current;
     if (!el || el.paused) {
-      playRange(t, stopAt.current ?? undefined);
+      playRange(t);
       return;
     }
     el.currentTime = t;
     setPosition(t);
   };
-  if (controlRef) controlRef.current = { playRange, seek };
+  const seekPreservingPlayback = (t: number) => {
+    const el = audioEl.current;
+    if (!el) return;
+    if (el.readyState < 1) pendingTime.current = t;
+    try { el.currentTime = t; } catch { pendingTime.current = t; }
+    setPosition(t);
+    callbacks.current.onTime?.(t);
+    const chapter = chapterAtTime(t, callbacks.current.chapters ?? []);
+    if (chapter) callbacks.current.onTimeSection?.(chapter.index);
+    saveAudioTime(t, true);
+  };
 
 
   /** Uloží pozici v knize do paměti zařízení. */
@@ -608,7 +632,6 @@ export function AudioPlayer({
   }, [question]);
 
   const togglePlay = () => {
-    void primeAudioPlayback();
     if (audioMode) {
       killSpeech();
       const el = audioEl.current;
@@ -619,7 +642,6 @@ export function AudioPlayer({
         setPlaying(false);
         setBuffering(false);
       } else {
-        stopAt.current = null;
         el.playbackRate = speed;
         el.muted = muted;
         el.volume = volume;
@@ -634,6 +656,7 @@ export function AudioPlayer({
       }
       return;
     }
+    void primeAudioPlayback();
     if (playing || speaker.current) {
       stopSpeech();
       setPlaying(false);
@@ -659,6 +682,7 @@ export function AudioPlayer({
     setPlaying(true);
     void run(title, "narrate");
   };
+  if (controlRef) controlRef.current = { playRange, seek, togglePlay, seekPreservingPlayback };
 
   // Ovládání ze zamčené obrazovky (Media Session).
   const navRef = useRef({ onPrev, onNext });
@@ -680,6 +704,10 @@ export function AudioPlayer({
         if (m().playing) m().togglePlay();
       },
       stop: () => {
+        if (audioMode) {
+          audioEl.current?.pause();
+          return;
+        }
         m().stopSpeech();
         setPlaying(false);
       },
