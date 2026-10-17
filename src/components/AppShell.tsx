@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { BookOpen, BookOpenText, Download, Flame, Home, Menu, Search, Settings, Sparkles, Swords, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RefreshButton } from "@/components/RefreshButton";
 import { parvas } from "@/data/parvas";
 import { characters, characterGroups } from "@/data/characters";
 import { astras } from "@/data/astras";
@@ -168,14 +169,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Flame className="size-5 text-primary" />
           <span className="font-display text-base text-gilded">Mahábhárata</span>
         </Link>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Otevřít nabídku"
-          className="rounded-md border border-border p-2 text-foreground"
-        >
-          <Menu className="size-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <RefreshButton />
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Otevřít nabídku"
+            className="grid min-h-11 min-w-11 place-items-center rounded-md border border-border text-foreground"
+          >
+            <Menu className="size-5" />
+          </button>
+        </div>
       </header>
 
       {open ? (
@@ -199,6 +203,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       ) : null}
+
+      <RefreshButton className="fixed right-4 top-4 z-40 hidden lg:grid" />
 
       <main className="min-w-0">{children}</main>
     </div>
