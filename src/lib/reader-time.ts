@@ -22,7 +22,13 @@ export function chapterAtTime<T extends SectionRange>(time: number, chapters: T[
     ?? [...chapters].reverse().find((chapter) => time >= chapter.startTime);
 }
 
-export function readerClock(seconds: number) {
-  const whole = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(whole / 60).toString().padStart(2, "0")}:${(whole % 60).toString().padStart(2, "0")}`;
+/** H:MM:SS od jedné hodiny, jinak MM:SS. */
+export function formatTime(seconds: number) {
+  const whole = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+  const h = Math.floor(whole / 3600);
+  const mm = Math.floor((whole % 3600) / 60).toString().padStart(2, "0");
+  const ss = (whole % 60).toString().padStart(2, "0");
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
+
+export const readerClock = formatTime;

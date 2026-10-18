@@ -405,6 +405,7 @@ function BookDetail() {
                 number={Number(/(\d+)/.exec(detailSection.title)?.[1])}
                 cuesUrl={audioBook.cuesUrl}
                 time={audioTime}
+                range={timeOf(openSection)!}
                 onPlaySection={() => {
                   const t = timeOf(openSection);
                   if (t) playerRef.current?.playRange(t.startTime);
