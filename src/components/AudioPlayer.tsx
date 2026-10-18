@@ -8,7 +8,7 @@ import {
 import { Headphones, Loader2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { chapterAtTime } from "@/lib/reader-time";
+import { chapterAtTime, formatTime } from "@/lib/reader-time";
 import { askAi } from "@/lib/ask-ai";
 import { setMediaSession } from "@/lib/background-audio";
 import {
@@ -90,11 +90,6 @@ const MSG_LOAD = "Nelze načíst zvuk, zkuste to prosím znovu.";
 
 const SPEEDS = [1, 1.25, 1.5] as const;
 
-function formatTime(totalSeconds: number) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = Math.floor(totalSeconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
 
 interface TextToken {
   text: string;

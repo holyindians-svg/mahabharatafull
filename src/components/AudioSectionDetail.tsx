@@ -1,22 +1,30 @@
 import { Maximize2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KaraokeText } from "@/components/KaraokeText";
+import { formatTime, sectionProgress, type SectionRange } from "@/lib/reader-time";
 
 interface Props {
   title: string;
   number: number;
   cuesUrl: string;
   time: number;
+  range: SectionRange;
   onPlaySection: () => void;
   onSeek: (t: number) => void;
   onExpand: () => void;
 }
 
-export function AudioSectionDetail({ title, number, cuesUrl, time, onPlaySection, onSeek, onExpand }: Props) {
+export function AudioSectionDetail({ title, number, cuesUrl, time, range, onPlaySection, onSeek, onExpand }: Props) {
+  const { elapsed, duration } = sectionProgress(time, range);
   return (
     <div className="rounded-xl border border-border bg-surface/70 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="min-w-0 font-display text-base text-foreground">{title}</p>
+        <div className="min-w-0">
+          <p className="font-display text-base text-foreground">{title}</p>
+          <p className="text-xs tabular-nums text-muted-foreground">
+            {formatTime(elapsed)} / {formatTime(duration)}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" onClick={onPlaySection} className="press min-h-11">
             <Play /> Přehrát oddíl

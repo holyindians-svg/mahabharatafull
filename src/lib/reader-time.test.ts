@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { deepStrictEqual, strictEqual } from "node:assert";
-import { chapterAtTime, clampSectionTime, sectionProgress, skipSectionTime } from "./reader-time";
+import { chapterAtTime, clampSectionTime, formatTime, sectionProgress, skipSectionTime } from "./reader-time";
 
 const section = { startTime: 120, endTime: 990 };
 
@@ -27,5 +27,11 @@ describe("immersive reader timing", () => {
     strictEqual(chapterAtTime(120.5, chapters)?.index, 0);
     strictEqual(chapterAtTime(121, chapters)?.index, 1);
     strictEqual(chapterAtTime(130, chapters)?.index, 1);
+  });
+  test("formats long times with hours", () => {
+    strictEqual(formatTime(93835.78), "26:03:55");
+    strictEqual(formatTime(3600), "1:00:00");
+    strictEqual(formatTime(2720), "45:20");
+    strictEqual(formatTime(75), "01:15");
   });
 });
