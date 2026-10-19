@@ -147,7 +147,7 @@ function RootComponent() {
     let unsub: (() => void) | undefined;
     let cancelled = false;
     (async () => {
-      const fallback = validId(import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY);
+      const fallback = validId(import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY"]);
       const id = validId(await getAnalyticsId().catch(() => null)) ?? fallback;
       if (!id || cancelled) return;
       initAnalytics(id);
