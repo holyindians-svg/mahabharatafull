@@ -16,3 +16,4 @@
 - Audiobook section times/cues are generated from SRT by scripts/build-audiobook-srt.mjs into src/data/audiobook-times/<slug>.ts and public/audio-texty/<slug>.json; sections match by the number in their title so text parsing changes can't shift timings.
 - Immersive audiobook readers control the existing mounted AudioPlayer through its handle and playback callbacks; never create or remount audio for a view change, so playback stays uninterrupted.
 - Inline and immersive karaoke share KaraokeText and the canonical cue loader; keep section-relative timing and bounded seek arithmetic in reader-time for consistent controls.
+- Google Analytics initializes only from the root component useEffect (prod only), ID via server fn; keeps SSR clean and dev traffic out.
