@@ -15,6 +15,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppShell } from "@/components/AppShell";
 import { startTextSync } from "@/lib/text-store";
 import { registerPwa } from "@/lib/pwa-register";
+import { initAnalytics, trackPageView, validId } from "@/lib/analytics";
+import { getAnalyticsId } from "@/lib/analytics.functions";
 
 function NotFoundComponent() {
   return (
@@ -135,10 +137,30 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
   useEffect(() => {
     registerPwa();
     return startTextSync();
   }, []);
+  useEffect(() => {
+    if (import.meta.env.DEV) return;
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    (async () => {
+      const fallback = validId(import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY);
+      const id = validId(await getAnalyticsId().catch(() => null)) ?? fallback;
+      if (!id || cancelled) return;
+      initAnalytics(id);
+      trackPageView(window.location.pathname);
+      unsub = router.subscribe("onResolved", (e) => {
+        if (e.pathChanged) trackPageView(e.toLocation.pathname);
+      });
+    })();
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>
