@@ -17,3 +17,4 @@
 - Immersive audiobook readers control the existing mounted AudioPlayer through its handle and playback callbacks; never create or remount audio for a view change, so playback stays uninterrupted.
 - Inline and immersive karaoke share KaraokeText and the canonical cue loader; keep section-relative timing and bounded seek arithmetic in reader-time for consistent controls.
 - Google Analytics initializes only from the root component useEffect (prod only), ID via server fn; keeps SSR clean and dev traffic out.
+- MP3 listening analytics use one tracker per mounted recording and native audio events; exclude seeks, pauses and buffering from elapsed listening, so reader views cannot duplicate events.

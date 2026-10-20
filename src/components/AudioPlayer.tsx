@@ -9,6 +9,7 @@ import { Headphones, Loader2, Pause, Play, RotateCcw, Volume2, VolumeX } from "l
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { chapterAtTime, formatTime } from "@/lib/reader-time";
+import { createAudioAnalytics } from "@/lib/audio-analytics";
 import { askAi } from "@/lib/ask-ai";
 import { setMediaSession } from "@/lib/background-audio";
 import {
@@ -219,6 +220,7 @@ export function AudioPlayer({
     el.src = audioUrl;
     el.preload = "metadata";
     audioEl.current = el;
+    const analytics = createAudioAnalytics(() => callbacks.current.title);
     try {
       const raw = storageKey ? localStorage.getItem(storageKey) : null;
       if (raw) {
@@ -236,6 +238,7 @@ export function AudioPlayer({
       }
     };
     const onTime = () => {
+      if (!el.paused && !el.seeking) analytics.update(el.currentTime, performance.now(), el.playbackRate);
       setPosition(el.currentTime);
       saveAudioTime(el.currentTime);
       callbacks.current.onTime?.(el.currentTime);
@@ -262,6 +265,8 @@ export function AudioPlayer({
       }
     };
     const onEnded = () => {
+      analytics.update(el.currentTime, performance.now(), el.playbackRate);
+      analytics.complete();
       setPlaying(false);
       if (storageKey) saveAudioTime(el.duration, true);
       callbacks.current.onFinished?.();
@@ -269,8 +274,12 @@ export function AudioPlayer({
     el.addEventListener("loadedmetadata", onMeta);
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("ended", onEnded);
-    const onPlay = () => setPlaying(true);
+    const onPlay = () => {
+      analytics.play();
+      setPlaying(true);
+    };
     const onPause = () => {
+      analytics.suspend();
       setPlaying(false);
       setBuffering(false);
       saveAudioTime(el.currentTime, true);
@@ -279,14 +288,20 @@ export function AudioPlayer({
     el.addEventListener("pause", onPause);
     const onReady = () => {
       if (!el.paused) {
+        analytics.resume(el.currentTime, performance.now());
         setBuffering(false);
         setError(null);
       }
     };
     const onWait = () => {
+      analytics.suspend();
       if (!el.paused) setBuffering(true);
     };
+    const onSeeked = () => {
+      if (!el.paused && el.readyState >= 3) analytics.resume(el.currentTime, performance.now());
+    };
     const onErr = () => {
+      analytics.suspend();
       setBuffering(false);
       setPlaying(false);
       setError(MSG_LOAD);
@@ -295,6 +310,7 @@ export function AudioPlayer({
     el.addEventListener("canplay", onReady);
     el.addEventListener("waiting", onWait);
     el.addEventListener("seeking", onWait);
+    el.addEventListener("seeked", onSeeked);
     el.addEventListener("error", onErr);
     return () => {
       el.removeEventListener("play", onPlay);
@@ -303,6 +319,7 @@ export function AudioPlayer({
       el.removeEventListener("canplay", onReady);
       el.removeEventListener("waiting", onWait);
       el.removeEventListener("seeking", onWait);
+      el.removeEventListener("seeked", onSeeked);
       el.removeEventListener("error", onErr);
       setBuffering(false);
       el.removeEventListener("loadedmetadata", onMeta);
