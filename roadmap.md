@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Přidat a ověřit Google Analytics události spuštění, pěti minut poslechu a dokončení audioknihy.
+- [x] Přidat a ověřit Google Analytics události spuštění, pěti minut poslechu a dokončení audioknihy.
 
 - [x] Přidat celoobrazovkovou karaoke čtečku s nepřerušovaným audiem a společnými ovládacími prvky.
 - [x] Ověřit čtečku, navazování oddílů a ovládání na rozměrech telefonu, tabletu a počítače.
