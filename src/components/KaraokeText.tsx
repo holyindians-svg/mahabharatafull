@@ -11,10 +11,12 @@ interface Props {
   time: number;
   immersive?: boolean;
   onSeek: (time: number) => void;
+  /** Cílové jméno, které svítí jen v aktivní větě. */
+  entity?: string | undefined;
 }
 
 /** Both readers share the same timed source; only typography and framing differ. */
-export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek }: Props) {
+export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek, entity }: Props) {
   const [cues, setCues] = useState<Cue[] | null>(null);
   const [failed, setFailed] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -95,7 +97,7 @@ export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek }
                 onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSeek(cue[0]); } }}
                 className={cn("cursor-pointer rounded px-0.5 transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   cueIndex === active ? "bg-primary/20 font-semibold text-foreground" : "text-muted-foreground hover:text-foreground")}
-              ><EntityText text={cue[2]} />{" "}</span>
+              >{cueIndex === active ? <EntityText text={cue[2]} name={entity} /> : cue[2]}{" "}</span>
             ))}
           </p>)}
       </div>

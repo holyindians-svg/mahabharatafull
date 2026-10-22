@@ -7,10 +7,11 @@ interface Props {
   range: SectionRange;
   /** Čas, od kterého má přehrávání po otevření rovnou začít. */
   startAt: number;
+  onTime?: (t: number) => void;
 }
 
 /** Úzký přehrávač oddílu ve čtečce; jeden audio prvek, zastaví se při odpojení. */
-export function ReaderAudioBar({ audioUrl, range, startAt }: Props) {
+export function ReaderAudioBar({ audioUrl, range, startAt, onTime }: Props) {
   const ref = useRef<HTMLAudioElement>(null);
   const [time, setTime] = useState(startAt);
   const [playing, setPlaying] = useState(false);
@@ -37,7 +38,7 @@ export function ReaderAudioBar({ audioUrl, range, startAt }: Props) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-[105] border-t border-primary/30 bg-background/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md">
       <audio ref={ref} src={audioUrl} preload="auto"
-        onTimeUpdate={(e) => { const t = e.currentTarget.currentTime; setTime(t); if (t >= range.endTime) e.currentTarget.pause(); }}
+        onTimeUpdate={(e) => { const t = e.currentTarget.currentTime; setTime(t); onTime?.(t); if (t >= range.endTime) e.currentTarget.pause(); }}
         onPlay={() => setPlaying(true)} onPause={() => { setPlaying(false); setWaiting(false); }}
         onWaiting={() => setWaiting(true)} onPlaying={() => setWaiting(false)} onCanPlay={() => setWaiting(false)} />
       <div className="mx-auto flex max-w-3xl items-center gap-3">

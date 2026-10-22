@@ -1,11 +1,12 @@
 import { memo } from "react";
 import { highlightSegments } from "@/lib/entity-names";
 
-/** Text se zářícími jmény entit z encyklopedie. */
-export const EntityText = memo(function EntityText({ text, extra }: { text: string; extra?: string | undefined }) {
+/** Text se zářícím cílovým jménem; bez jména vrací čistý text. */
+export const EntityText = memo(function EntityText({ text, name }: { text: string; name?: string | undefined }) {
+  if (!name) return <>{text}</>;
   return (
     <>
-      {highlightSegments(text, extra).map((p, i) =>
+      {highlightSegments(text, [name]).map((p, i) =>
         p.entity ? <mark key={i} className="entity-highlight">{p.text}</mark> : p.text,
       )}
     </>
