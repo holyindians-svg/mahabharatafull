@@ -70,7 +70,7 @@
   --popover-foreground: oklch(0.94 0.02 85);
 
   --gold: oklch(0.82 0.145 85);
-  --highlight: oklch(0.88 0.17 95 / 0.45);
+  --highlight: oklch(0.72 0.16 5 / 0.16);
   --gold-soft: oklch(0.68 0.11 80);
   --crimson: oklch(0.45 0.17 22);
   --royal: oklch(0.45 0.16 268);
