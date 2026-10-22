@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { findOccurrences } from "@/lib/occurrences";
 import { Button } from "@/components/ui/button";
 
 export function Occurrences({ name }: { name: string }) {
   const [shown, setShown] = useState(20);
+  const back = useLocation().pathname;
   const { data, isPending, isError } = useQuery({
     queryKey: ["occurrences", name],
     queryFn: () => findOccurrences(name),
@@ -25,7 +26,7 @@ export function Occurrences({ name }: { name: string }) {
             {data.slice(0, shown).map((o, i) => (
               <li key={i}>
                 <Link to="/knihy-ke-cteni"
-                  search={{ kniha: o.bookSlug, oddil: o.sectionNumber, vyskyt: o.ordinal, hledat: name }}
+                  search={{ kniha: o.bookSlug, oddil: o.sectionNumber, vyskyt: o.ordinal, hledat: name, zpet: back }}
                   className="press block rounded-lg border border-border bg-surface/70 px-4 py-3 transition-colors hover:border-primary/50">
                   <span className="text-xs uppercase tracking-wider text-primary">{o.bookName} › od. {o.sectionNumber}</span>
                   <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
