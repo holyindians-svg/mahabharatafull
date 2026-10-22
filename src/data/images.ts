@@ -105,13 +105,13 @@ export const HERO_IMAGE = heroImage;
 
 const CHARACTER_IMAGES: Record<string, string> = {
   "santanu": characters0,
-  "satjavati": characters1,
+  "satjavati": characters7,
   "bhisma": characters2,
   "vjasa": characters3,
   "dhritarastra": characters4,
   "gandhari": characters5,
   "pandu": characters6,
-  "kunti": characters7,
+  "kunti": characters1,
   "madri": characters8,
   "vidura": characters9,
   "drona": characters10,
