@@ -20,12 +20,16 @@ export interface Occurrence {
 const fold = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 /** Kmen jména: hlavní slovo bez koncové samohlásky; krátká jména jen s pádovou koncovkou. */
-export function nameMatcher(name: string): RegExp {
+export function namePattern(name: string): string {
   const main = name.split(/[\s(–-]+/).filter(Boolean)[0] ?? name;
   const base = fold(main).replace(/[^a-z]/g, "");
   const stem = base.length > 4 ? base.replace(/[aeiouy]$/, "") : base.replace(/[aeiouy]$/, "");
   const suffix = base.length > 4 ? "[a-z]{0,6}" : "(?:a|y|e|u|ou|ovi|o|i|ov[a-z]{0,3})?";
-  return new RegExp(`(?<![a-z])${stem}${suffix}(?![a-z])`, "g");
+  return stem.length < 2 ? "" : `(?<![a-z])${stem}${suffix}(?![a-z])`;
+}
+
+export function nameMatcher(name: string): RegExp {
+  return new RegExp(namePattern(name) || "(?!)", "g");
 }
 
 /** Najde shody v textu; vrací rozsahy v původním (nefoldovaném) řetězci. */

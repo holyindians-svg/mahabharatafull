@@ -3,6 +3,7 @@ import { clockGet, clockSubscribe } from "@/lib/playback-clock";
 import { activeCueIndex } from "@/lib/reader-time";
 import { loadCues, type Cue } from "@/data/audiobooks";
 import { cn } from "@/lib/utils";
+import { EntityText } from "@/components/EntityText";
 
 interface Props {
   cuesUrl: string;
@@ -94,7 +95,7 @@ export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek }
                 onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSeek(cue[0]); } }}
                 className={cn("cursor-pointer rounded px-0.5 transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   cueIndex === active ? "bg-primary/20 font-semibold text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >{cue[2]}{" "}</span>
+              ><EntityText text={cue[2]} />{" "}</span>
             ))}
           </p>)}
       </div>

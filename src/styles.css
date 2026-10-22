@@ -309,3 +309,14 @@
   }
   & > * { position: relative; }
 }
+
+/* Zářící jméno entity v textu čteček. */
+@utility entity-highlight {
+  background-color: color-mix(in oklab, var(--gold) 30%, transparent);
+  color: var(--gold);
+  font-weight: 700;
+  border-bottom: 2px solid var(--gold);
+  border-radius: 3px;
+  padding-inline: 0.1em;
+  box-shadow: 0 0 8px color-mix(in oklab, var(--gold) 40%, transparent);
+}
