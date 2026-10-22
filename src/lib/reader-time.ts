@@ -32,3 +32,16 @@ export function formatTime(seconds: number) {
 }
 
 export const readerClock = formatTime;
+/** Aktivní titulek: v mezeře a za koncem drží předchozí, před první větou vrací 0; -1 jen bez titulků. */
+export function activeCueIndex(cues: readonly (readonly [number, number, ...unknown[]])[], t: number): number {
+  if (!cues.length) return -1;
+  let low = 0;
+  let high = cues.length - 1;
+  let active = 0;
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    const cue = cues[mid];
+    if (cue && cue[0] <= t) { active = mid; low = mid + 1; } else high = mid - 1;
+  }
+  return active;
+}
