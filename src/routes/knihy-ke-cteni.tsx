@@ -91,6 +91,7 @@ function ReadingBooksPage() {
   const handled = useRef("");
   const setOpenSection = (value: OpenSection | null) => {
     setOpenSectionState(value);
+    if (!value) setFlash(null);
     if (!value && search.zpet) void navigate({ to: search.zpet, replace: true });
     else if (!value && search.kniha) void navigate({ search: {}, replace: true });
   };
@@ -171,8 +172,6 @@ function ReadingBooksPage() {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       document.querySelector(`[data-reading-paragraph="${target}"]`)?.scrollIntoView({ block: "center" });
     }));
-    const t = setTimeout(() => setFlash(null), 3000);
-    return () => clearTimeout(t);
   }, [books, search]);
 
   const groupedBooks = useMemo(
@@ -271,7 +270,7 @@ function ReadingBooksPage() {
             <div className="space-y-6 text-[1.125rem] leading-8 text-foreground sm:text-xl sm:leading-9">
               {openSection.paragraphs.map((paragraph, index) => (
                 <p key={`${openSection.section.fromSegment}-${index}`} data-reading-paragraph={index}
-                  className={cn("-mx-2 rounded px-2 transition-colors duration-700 motion-reduce:transition-none", flash === index && "bg-highlight")}>
+                  className={cn("-mx-1 rounded-md px-1 transition-colors duration-700 motion-reduce:transition-none", flash === index && "bg-highlight backdrop-blur-sm")}>
                   {paragraph}
                 </p>
               ))}
