@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { matchesIn, nameMatcher } from "@/lib/occurrences";
 import { cn } from "@/lib/utils";
 import { audiobookFor } from "@/data/audiobooks";
+import { EntityText } from "@/components/EntityText";
 import { ReaderAudioBar } from "@/components/ReaderAudioBar";
 import { BookOpenText, X } from "lucide-react";
 import { Page, PageHeader } from "@/components/Bits";
@@ -277,7 +278,7 @@ function ReadingBooksPage() {
               {openSection.paragraphs.map((paragraph, index) => (
                 <p key={`${openSection.section.fromSegment}-${index}`} data-reading-paragraph={index}
                   className={cn("relative -mx-3 rounded-md px-3 transition-colors duration-700 motion-reduce:transition-none", flash === index && "lotus-frame")}>
-                  {paragraph}
+                  <EntityText text={paragraph} extra={search.hledat} />
                 </p>
               ))}
             </div>
