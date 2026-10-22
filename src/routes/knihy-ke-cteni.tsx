@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { matchesIn, nameMatcher } from "@/lib/occurrences";
 import { cn } from "@/lib/utils";
+import { audiobookFor } from "@/data/audiobooks";
+import { ReaderAudioBar } from "@/components/ReaderAudioBar";
 import { BookOpenText, X } from "lucide-react";
 import { Page, PageHeader } from "@/components/Bits";
 import { Button } from "@/components/ui/button";
@@ -25,12 +27,14 @@ type ReadingBook = {
 };
 
 type OpenSection = {
+  slug?: string;
+  number?: number;
   bookName: string;
   section: BookSection;
   paragraphs: string[];
 };
 
-type ReaderSearch = { kniha?: string; oddil?: number; vyskyt?: number; hledat?: string; zpet?: string };
+type ReaderSearch = { kniha?: string; oddil?: number; vyskyt?: number; hledat?: string; zpet?: string; cas?: number };
 
 export const Route = createFileRoute("/knihy-ke-cteni")({
   validateSearch: (raw: Record<string, unknown>): ReaderSearch => {
@@ -41,6 +45,8 @@ export const Route = createFileRoute("/knihy-ke-cteni")({
     const v = Number(raw["vyskyt"]);
     if (Number.isFinite(v) && v >= 0) out.vyskyt = v;
     if (typeof raw["hledat"] === "string") out.hledat = raw["hledat"].slice(0, 80);
+    const c = Number(raw["cas"]);
+    if (raw["cas"] !== undefined && Number.isFinite(c) && c >= 0) out.cas = c;
     const z = raw["zpet"];
     if (typeof z === "string" && z.startsWith("/") && !z.startsWith("//") && z.length <= 200) out.zpet = z;
     return out;
@@ -167,7 +173,7 @@ function ReadingBooksPage() {
       }
       if (first >= 0) target = first;
     }
-    setOpenSectionState({ bookName: book.name, section, paragraphs });
+    setOpenSectionState({ slug: book.slug, number: search.oddil, bookName: book.name, section, paragraphs });
     setFlash(target);
     requestAnimationFrame(() => requestAnimationFrame(() => {
       document.querySelector(`[data-reading-paragraph="${target}"]`)?.scrollIntoView({ block: "center" });
@@ -247,7 +253,7 @@ function ReadingBooksPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="reading-title"
-          className="fixed inset-0 z-[100] overflow-y-auto bg-background"
+          className="mandala-watermark fixed inset-0 z-[100] overflow-y-auto bg-background"
         >
           <Button
             type="button"
@@ -261,7 +267,7 @@ function ReadingBooksPage() {
             Zavřít
           </Button>
 
-          <article className="mx-auto w-full max-w-3xl px-6 pb-20 pt-28 sm:px-10 sm:pt-32">
+          <article className="mx-auto w-full max-w-3xl px-6 pb-32 pt-28 sm:px-10 sm:pt-32">
             <p className="text-sm text-muted-foreground">{openSection.bookName}</p>
             <h1 id="reading-title" className="mt-2 text-3xl leading-tight text-foreground sm:text-4xl">
               {openSection.section.title}
@@ -270,12 +276,19 @@ function ReadingBooksPage() {
             <div className="space-y-6 text-[1.125rem] leading-8 text-foreground sm:text-xl sm:leading-9">
               {openSection.paragraphs.map((paragraph, index) => (
                 <p key={`${openSection.section.fromSegment}-${index}`} data-reading-paragraph={index}
-                  className={cn("-mx-1 rounded-md px-1 transition-colors duration-700 motion-reduce:transition-none", flash === index && "bg-highlight backdrop-blur-sm")}>
+                  className={cn("relative -mx-3 rounded-md px-3 transition-colors duration-700 motion-reduce:transition-none", flash === index && "lotus-frame")}>
                   {paragraph}
                 </p>
               ))}
             </div>
           </article>
+          {(() => {
+            const book = openSection.slug ? audiobookFor(openSection.slug) : undefined;
+            const range = book && openSection.number ? book.sections[openSection.number] : undefined;
+            return book && range && search.cas !== undefined ? (
+              <ReaderAudioBar audioUrl={book.audioUrl} range={range} startAt={search.cas} />
+            ) : null;
+          })()}
         </div>
       ) : null}
     </>

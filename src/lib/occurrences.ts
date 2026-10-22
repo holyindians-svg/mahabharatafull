@@ -12,6 +12,9 @@ export interface Occurrence {
   matchEnd: number;
   /** Pořadí výskytu v rámci oddílu (0 = první). */
   ordinal: number;
+  /** Čas věty v nahrávce knihy (jen knihy s titulky). */
+  time?: number;
+  endTime?: number;
 }
 
 const fold = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -57,11 +60,14 @@ export async function findOccurrences(name: string): Promise<Occurrence[]> {
   const result: Occurrence[] = [];
   for (const slug of FULL_TEXT_BOOKS) {
     const bookName = parvas.find((p) => p.slug === slug)?.name ?? slug;
-    const push = (n: number, sentences: string[]) => {
+    const push = (n: number, sentences: { text: string; time?: number; end?: number }[]) => {
       let ordinal = 0;
-      for (const sentence of sentences) {
+      for (const { text: sentence, time, end } of sentences) {
         for (const [matchStart, matchEnd] of matchesIn(sentence, re)) {
-          result.push({ bookSlug: slug, bookName, sectionNumber: n, sentence, matchStart, matchEnd, ordinal });
+          result.push({
+            bookSlug: slug, bookName, sectionNumber: n, sentence, matchStart, matchEnd, ordinal,
+            ...(time !== undefined && end !== undefined ? { time, endTime: end } : {}),
+          });
           ordinal += 1;
           break; // jedna položka na větu
         }
@@ -71,11 +77,11 @@ export async function findOccurrences(name: string): Promise<Occurrence[]> {
       const cuesUrl = audiobookFor(slug)?.cuesUrl;
       if (cuesUrl) {
         const cues = await loadCues(cuesUrl);
-        for (const [n, list] of [...cues.entries()].sort((a, b) => a[0] - b[0])) push(n, list.map((c) => c[2]));
+        for (const [n, list] of [...cues.entries()].sort((a, b) => a[0] - b[0])) push(n, list.map((c) => ({ text: c[2], time: c[0], end: c[1] })));
       } else {
         const book = await loadBookSegments(slug);
         for (const s of sectionsOf(book, slug)) {
-          push(sectionNumber(s.title), book.segments.slice(s.fromSegment + 1, s.toSegment + 1));
+          push(sectionNumber(s.title), book.segments.slice(s.fromSegment + 1, s.toSegment + 1).map((text) => ({ text })));
         }
       }
     } catch {
