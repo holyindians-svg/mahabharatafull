@@ -5,6 +5,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { clockPublish } from "@/lib/playback-clock";
 import { Headphones, Loader2, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -274,11 +275,19 @@ export function AudioPlayer({
     el.addEventListener("loadedmetadata", onMeta);
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("ended", onEnded);
+    let raf = 0;
+    const tick = () => {
+      clockPublish(el.currentTime);
+      raf = !el.paused && !el.ended ? requestAnimationFrame(tick) : 0;
+    };
+    const stopTick = () => { cancelAnimationFrame(raf); raf = 0; clockPublish(el.currentTime); };
     const onPlay = () => {
       analytics.play();
       setPlaying(true);
+      if (!raf) raf = requestAnimationFrame(tick);
     };
     const onPause = () => {
+      stopTick();
       analytics.suspend();
       setPlaying(false);
       setBuffering(false);
@@ -313,6 +322,7 @@ export function AudioPlayer({
     el.addEventListener("seeked", onSeeked);
     el.addEventListener("error", onErr);
     return () => {
+      cancelAnimationFrame(raf);
       el.removeEventListener("play", onPlay);
       el.removeEventListener("pause", onPause);
       el.removeEventListener("playing", onReady);
@@ -389,6 +399,7 @@ export function AudioPlayer({
     if (el.readyState < 1) pendingTime.current = t;
     try { el.currentTime = t; } catch { pendingTime.current = t; }
     setPosition(t);
+    clockPublish(t);
     callbacks.current.onTime?.(t);
     const chapter = chapterAtTime(t, callbacks.current.chapters ?? []);
     if (chapter) callbacks.current.onTimeSection?.(chapter.index);

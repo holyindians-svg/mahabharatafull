@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { deepStrictEqual, strictEqual } from "node:assert";
-import { chapterAtTime, clampSectionTime, formatTime, sectionProgress, skipSectionTime } from "./reader-time";
+import { activeCueIndex, chapterAtTime, clampSectionTime, formatTime, sectionProgress, skipSectionTime } from "./reader-time";
 
 const section = { startTime: 120, endTime: 990 };
 
@@ -34,4 +34,15 @@ describe("immersive reader timing", () => {
     strictEqual(formatTime(2720), "45:20");
     strictEqual(formatTime(75), "01:15");
   });
+});
+describe("activeCueIndex", () => {
+  const cues = [[1.884, 3.404], [3.925, 10.784], [10.784, 15.445]] as const;
+  test("přesné hranice v milisekundách", () => {
+    strictEqual(activeCueIndex(cues, 3.924), 0);
+    strictEqual(activeCueIndex(cues, 3.925), 1);
+    strictEqual(activeCueIndex(cues, 10.784), 2);
+  });
+  test("mezera drží předchozí větu", () => strictEqual(activeCueIndex(cues, 3.6), 0));
+  test("za koncem zůstává poslední", () => strictEqual(activeCueIndex(cues, 99), 2));
+  test("před začátkem první", () => strictEqual(activeCueIndex(cues, 0.5), 0));
 });

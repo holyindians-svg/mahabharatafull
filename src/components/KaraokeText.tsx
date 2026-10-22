@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { clockGet, clockSubscribe } from "@/lib/playback-clock";
+import { activeCueIndex } from "@/lib/reader-time";
 import { loadCues, type Cue } from "@/data/audiobooks";
 import { cn } from "@/lib/utils";
 
@@ -41,19 +43,16 @@ export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek }
     resumeTimer.current = setTimeout(() => setScrollRetry((value) => value + 1), 4050);
   };
 
-  let active = -1;
-  if (cues) {
-    let low = 0;
-    let high = cues.length - 1;
-    while (low <= high) {
-      const mid = (low + high) >> 1;
-      const cue = cues[mid];
-      if (cue && cue[0] <= time) { active = mid; low = mid + 1; }
-      else high = mid - 1;
-    }
-    const cue = cues[active];
-    if (cue && time > cue[1] + 2 && active === cues.length - 1) active = -1;
-  }
+  // Čas z každého snímku (rAF), pokud MP3 hraje; jinak čas z rodiče. Překreslí se jen při změně věty.
+  const pick = useCallback(() => {
+    if (!cues) return -1;
+    const live = clockGet();
+    const first = cues[0];
+    const last = cues[cues.length - 1];
+    const inSection = first && last && live >= first[0] - 30 && live <= last[1] + 30;
+    return activeCueIndex(cues, live >= 0 && inSection ? live : time);
+  }, [cues, time]);
+  const active = useSyncExternalStore(clockSubscribe, pick, () => -1);
 
   useEffect(() => {
     if (active < 0 || Date.now() < manualUntil.current) return;
@@ -62,7 +61,7 @@ export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek }
     if (!container || !sentence) return;
     const bounds = container.getBoundingClientRect();
     const rect = sentence.getBoundingClientRect();
-    if (immersive || rect.top < bounds.top + 24 || rect.bottom > bounds.bottom - 24) {
+    {
       container.scrollTo({
         top: container.scrollTop + rect.top - bounds.top - bounds.height / 2 + rect.height / 2,
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
