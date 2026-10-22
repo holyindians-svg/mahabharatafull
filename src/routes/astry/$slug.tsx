@@ -7,6 +7,7 @@ import { narrationFor } from "@/data/narrations";
 
 import { EntityCard } from "@/components/EntityCard";
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
+import { Occurrences } from "@/components/Occurrences";
 
 export const Route = createFileRoute("/astry/$slug")({
   loader: ({ params }) => {
@@ -67,6 +68,7 @@ function AstraDetail() {
 
             <h3 className="mt-9 font-display text-lg">V eposu</h3>
             <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{astra.lore}</p>
+            <Occurrences name={astra.name} />
 
             <div className="mt-8 rounded-xl border border-border bg-surface/70 p-5">
               <div className="flex items-center justify-between text-sm">

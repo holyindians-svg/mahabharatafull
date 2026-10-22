@@ -18,3 +18,4 @@
 - Inline and immersive karaoke share KaraokeText and the canonical cue loader; keep section-relative timing and bounded seek arithmetic in reader-time for consistent controls.
 - Google Analytics initializes only from the root component useEffect (prod only), ID via server fn; keeps SSR clean and dev traffic out.
 - MP3 listening analytics use one tracker per mounted recording and native audio events; exclude seeks, pauses and buffering from elapsed listening, so reader views cannot duplicate events.
+- Entity cross-references (src/lib/occurrences.ts) search the canonical cue/book-text loaders and deep-link to /knihy-ke-cteni via search params; never index copied text, so new books appear automatically.

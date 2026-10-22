@@ -18,6 +18,7 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-highlight: var(--highlight);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -69,6 +70,7 @@
   --popover-foreground: oklch(0.94 0.02 85);
 
   --gold: oklch(0.82 0.145 85);
+  --highlight: oklch(0.88 0.17 95 / 0.45);
   --gold-soft: oklch(0.68 0.11 80);
   --crimson: oklch(0.45 0.17 22);
   --royal: oklch(0.45 0.16 268);

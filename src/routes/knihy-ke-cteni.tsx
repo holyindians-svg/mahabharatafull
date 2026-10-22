@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { matchesIn, nameMatcher } from "@/lib/occurrences";
+import { cn } from "@/lib/utils";
 import { BookOpenText, X } from "lucide-react";
 import { Page, PageHeader } from "@/components/Bits";
 import { Button } from "@/components/ui/button";
@@ -28,7 +30,19 @@ type OpenSection = {
   paragraphs: string[];
 };
 
+type ReaderSearch = { kniha?: string; oddil?: number; vyskyt?: number; hledat?: string };
+
 export const Route = createFileRoute("/knihy-ke-cteni")({
+  validateSearch: (raw: Record<string, unknown>): ReaderSearch => {
+    const out: ReaderSearch = {};
+    if (typeof raw["kniha"] === "string") out.kniha = raw["kniha"];
+    const n = Number(raw["oddil"]);
+    if (Number.isFinite(n) && n > 0) out.oddil = n;
+    const v = Number(raw["vyskyt"]);
+    if (Number.isFinite(v) && v >= 0) out.vyskyt = v;
+    if (typeof raw["hledat"] === "string") out.hledat = raw["hledat"].slice(0, 80);
+    return out;
+  },
   head: () => ({
     meta: [
       { title: "Knihy ke čtení – Mahábhárata" },
@@ -68,7 +82,15 @@ function paragraphsForSection(book: BookText, section: BookSection): string[] {
 
 function ReadingBooksPage() {
   const [books, setBooks] = useState<ReadingBook[]>([]);
-  const [openSection, setOpenSection] = useState<OpenSection | null>(null);
+  const [openSection, setOpenSectionState] = useState<OpenSection | null>(null);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/knihy-ke-cteni" });
+  const [flash, setFlash] = useState<number | null>(null);
+  const handled = useRef("");
+  const setOpenSection = (value: OpenSection | null) => {
+    setOpenSectionState(value);
+    if (!value && search.kniha) void navigate({ search: {}, replace: true });
+  };
 
   const [textVersion, setTextVersion] = useState(0);
   useEffect(
@@ -116,6 +138,39 @@ function ReadingBooksPage() {
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [openSection]);
+
+  // Deep link z „Výskytů v textu“: otevřít oddíl, doskrolovat a dočasně zvýraznit.
+  useEffect(() => {
+    const key = JSON.stringify(search);
+    if (!search.kniha || !search.oddil || handled.current === key) return;
+    const book = books.find((b) => b.slug === search.kniha);
+    if (!book) return;
+    const section = book.sections.find((s) => Number(/(\d+)/.exec(s.title)?.[1]) === search.oddil);
+    if (!section) return;
+    handled.current = key;
+    const paragraphs = paragraphsForSection(book.book, section);
+    let target = 0;
+    if (search.hledat) {
+      const re = nameMatcher(search.hledat);
+      const want = search.vyskyt ?? 0;
+      let seen = 0;
+      let first = -1;
+      for (let i = 0; i < paragraphs.length; i += 1) {
+        const hits = matchesIn(paragraphs[i] ?? "", re).length;
+        if (hits && first < 0) first = i;
+        if (hits && seen + hits > want) { target = i; first = -2; break; }
+        seen += hits;
+      }
+      if (first >= 0) target = first;
+    }
+    setOpenSectionState({ bookName: book.name, section, paragraphs });
+    setFlash(target);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.querySelector(`[data-reading-paragraph="${target}"]`)?.scrollIntoView({ block: "center" });
+    }));
+    const t = setTimeout(() => setFlash(null), 3000);
+    return () => clearTimeout(t);
+  }, [books, search]);
 
   const groupedBooks = useMemo(
     () =>
@@ -212,7 +267,10 @@ function ReadingBooksPage() {
             <div className="rule-gold mt-6 mb-8" />
             <div className="space-y-6 text-[1.125rem] leading-8 text-foreground sm:text-xl sm:leading-9">
               {openSection.paragraphs.map((paragraph, index) => (
-                <p key={`${openSection.section.fromSegment}-${index}`}>{paragraph}</p>
+                <p key={`${openSection.section.fromSegment}-${index}`} data-reading-paragraph={index}
+                  className={cn("-mx-2 rounded px-2 transition-colors duration-700 motion-reduce:transition-none", flash === index && "bg-highlight")}>
+                  {paragraph}
+                </p>
               ))}
             </div>
           </article>

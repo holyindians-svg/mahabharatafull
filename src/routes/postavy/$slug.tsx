@@ -10,6 +10,7 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { primeAudioPlayback } from "@/lib/speak";
 import { EntityCard } from "@/components/EntityCard";
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
+import { Occurrences } from "@/components/Occurrences";
 
 export const Route = createFileRoute("/postavy/$slug")({
   loader: ({ params }) => {
@@ -119,6 +120,7 @@ function CharacterDetail() {
               <Chip className="hover:border-primary/50 hover:text-primary">{group.title}</Chip>
             </Link>
           </div>
+          <Occurrences name={character.name} />
         </div>
       </div>
 
