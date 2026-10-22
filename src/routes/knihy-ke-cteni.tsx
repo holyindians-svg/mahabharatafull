@@ -35,12 +35,12 @@ type ReaderSearch = { kniha?: string; oddil?: number; vyskyt?: number; hledat?: 
 export const Route = createFileRoute("/knihy-ke-cteni")({
   validateSearch: (raw: Record<string, unknown>): ReaderSearch => {
     const out: ReaderSearch = {};
-    if (typeof raw.kniha === "string") out.kniha = raw.kniha;
-    const n = Number(raw.oddil);
+    if (typeof raw["kniha"] === "string") out.kniha = raw["kniha"];
+    const n = Number(raw["oddil"]);
     if (Number.isFinite(n) && n > 0) out.oddil = n;
-    const v = Number(raw.vyskyt);
+    const v = Number(raw["vyskyt"]);
     if (Number.isFinite(v) && v >= 0) out.vyskyt = v;
-    if (typeof raw.hledat === "string") out.hledat = raw.hledat.slice(0, 80);
+    if (typeof raw["hledat"] === "string") out.hledat = raw["hledat"].slice(0, 80);
     return out;
   },
   head: () => ({
