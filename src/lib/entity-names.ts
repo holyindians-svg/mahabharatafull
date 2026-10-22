@@ -1,27 +1,12 @@
-/** Jména z encyklopedie (postavy, mudrci, zbraně) pro zářící zvýraznění v textu čteček. */
-import { characters } from "@/data/characters";
-import { astras } from "@/data/astras";
+/** Zvýraznění cílového jména entity (kořenový regex kvůli skloňování). */
 import { matchesIn, namePattern } from "@/lib/occurrences";
 
 export interface TextPart { text: string; entity: boolean }
 
-const ALL_NAMES = [...characters.map((c) => c.name), ...astras.map((a) => a.name)];
-const cache = new Map<string, RegExp>();
-
-function matcher(extra?: string): RegExp {
-  const key = extra ?? "";
-  let re = cache.get(key);
-  if (!re) {
-    const patterns = [...new Set([...ALL_NAMES, ...(extra ? [extra] : [])].map(namePattern).filter(Boolean))]
-      .sort((a, b) => b.length - a.length);
-    re = new RegExp(patterns.join("|") || "(?!)", "g");
-    cache.set(key, re);
-  }
-  return re;
-}
-
-export function highlightSegments(text: string, extra?: string, names?: string[]): TextPart[] {
-  const re = names ? new RegExp(names.map(namePattern).filter(Boolean).join("|") || "(?!)", "g") : matcher(extra);
+export function highlightSegments(text: string, names: string[]): TextPart[] {
+  const source = names.map(namePattern).filter(Boolean).join("|");
+  if (!source) return [{ text, entity: false }];
+  const re = new RegExp(source, "g");
   const parts: TextPart[] = [];
   let at = 0;
   for (const [a, b] of matchesIn(text, re)) {

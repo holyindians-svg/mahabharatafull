@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { matchesIn, nameMatcher } from "@/lib/occurrences";
 import { cn } from "@/lib/utils";
-import { audiobookFor } from "@/data/audiobooks";
+import { audiobookFor, loadCues, type Cue } from "@/data/audiobooks";
+import { activeCueIndex } from "@/lib/reader-time";
 import { EntityText } from "@/components/EntityText";
 import { ReaderAudioBar } from "@/components/ReaderAudioBar";
 import { BookOpenText, X } from "lucide-react";
@@ -96,6 +97,31 @@ function ReadingBooksPage() {
   const navigate = useNavigate({ from: "/knihy-ke-cteni" });
   const [flash, setFlash] = useState<number | null>(null);
   const handled = useRef("");
+  const [cues, setCues] = useState<Cue[] | null>(null);
+  const lastCue = useRef(-1);
+  useEffect(() => {
+    setCues(null);
+    lastCue.current = -1;
+    const url = openSection?.slug ? audiobookFor(openSection.slug)?.cuesUrl : undefined;
+    if (!url || !openSection?.number) return;
+    let alive = true;
+    void loadCues(url).then((m) => { if (alive) setCues(m.get(openSection.number ?? 0) ?? null); }).catch(() => {});
+    return () => { alive = false; };
+  }, [openSection]);
+  const fold = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const followAudio = (t: number) => {
+    if (!cues || !openSection) return;
+    const idx = activeCueIndex(cues, t);
+    if (idx === lastCue.current) return;
+    lastCue.current = idx;
+    const head = fold(cues[idx]?.[2] ?? "").slice(0, 40);
+    if (head.length < 8) return;
+    const p = openSection.paragraphs.findIndex((x) => fold(x).includes(head));
+    if (p >= 0 && p !== flash) {
+      setFlash(p);
+      document.querySelector(`[data-reading-paragraph="${p}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  };
   const setOpenSection = (value: OpenSection | null) => {
     setOpenSectionState(value);
     if (!value) setFlash(null);
@@ -278,7 +304,7 @@ function ReadingBooksPage() {
               {openSection.paragraphs.map((paragraph, index) => (
                 <p key={`${openSection.section.fromSegment}-${index}`} data-reading-paragraph={index}
                   className={cn("relative -mx-3 rounded-md px-3 transition-colors duration-700 motion-reduce:transition-none", flash === index && "lotus-frame")}>
-                  <EntityText text={paragraph} extra={search.hledat} />
+                  {flash === index ? <EntityText text={paragraph} name={search.hledat} /> : paragraph}
                 </p>
               ))}
             </div>
@@ -287,7 +313,7 @@ function ReadingBooksPage() {
             const book = openSection.slug ? audiobookFor(openSection.slug) : undefined;
             const range = book && openSection.number ? book.sections[openSection.number] : undefined;
             return book && range && search.cas !== undefined ? (
-              <ReaderAudioBar audioUrl={book.audioUrl} range={range} startAt={search.cas} />
+              <ReaderAudioBar audioUrl={book.audioUrl} range={range} startAt={search.cas} onTime={followAudio} />
             ) : null;
           })()}
         </div>
