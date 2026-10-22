@@ -30,7 +30,7 @@ type OpenSection = {
   paragraphs: string[];
 };
 
-type ReaderSearch = { kniha?: string; oddil?: number; vyskyt?: number; hledat?: string };
+type ReaderSearch = { kniha?: string; oddil?: number; vyskyt?: number; hledat?: string; zpet?: string };
 
 export const Route = createFileRoute("/knihy-ke-cteni")({
   validateSearch: (raw: Record<string, unknown>): ReaderSearch => {
@@ -41,6 +41,8 @@ export const Route = createFileRoute("/knihy-ke-cteni")({
     const v = Number(raw["vyskyt"]);
     if (Number.isFinite(v) && v >= 0) out.vyskyt = v;
     if (typeof raw["hledat"] === "string") out.hledat = raw["hledat"].slice(0, 80);
+    const z = raw["zpet"];
+    if (typeof z === "string" && z.startsWith("/") && !z.startsWith("//") && z.length <= 200) out.zpet = z;
     return out;
   },
   head: () => ({
@@ -89,7 +91,8 @@ function ReadingBooksPage() {
   const handled = useRef("");
   const setOpenSection = (value: OpenSection | null) => {
     setOpenSectionState(value);
-    if (!value && search.kniha) void navigate({ search: {}, replace: true });
+    if (!value && search.zpet) void navigate({ to: search.zpet, replace: true });
+    else if (!value && search.kniha) void navigate({ search: {}, replace: true });
   };
 
   const [textVersion, setTextVersion] = useState(0);
