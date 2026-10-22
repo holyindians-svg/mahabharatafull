@@ -31,7 +31,7 @@ export function Occurrences({ name }: { name: string }) {
             {data.slice(0, shown).map((o, i) => (
               <li key={i} className="flex items-stretch gap-2">
                 <Link to="/knihy-ke-cteni"
-                  search={{ kniha: o.bookSlug, oddil: o.sectionNumber, vyskyt: o.ordinal, hledat: name, zpet: back, ...(o.time !== undefined ? { cas: o.time } : {}) }}
+                  search={{ kniha: o.bookSlug, oddil: o.sectionNumber, vyskyt: o.ordinal, hledat: name, zpet: back, ...(o.time !== undefined ? { cas: o.time, ...(o.endTime !== undefined ? { konec: o.endTime } : {}) } : {}) }}
                   className="press block flex-1 rounded-lg border border-border bg-surface/70 px-4 py-3 transition-colors hover:border-primary/50">
                   <span className="text-xs uppercase tracking-wider text-primary">{o.bookName} › od. {o.sectionNumber}</span>
                   <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">

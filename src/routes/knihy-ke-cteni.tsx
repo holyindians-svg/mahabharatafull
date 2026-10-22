@@ -31,12 +31,13 @@ type ReadingBook = {
 type OpenSection = {
   slug?: string;
   number?: number;
+  context?: string;
   bookName: string;
   section: BookSection;
   paragraphs: string[];
 };
 
-type ReaderSearch = { kniha?: string; oddil?: number; vyskyt?: number; hledat?: string; zpet?: string; cas?: number };
+type ReaderSearch = { kniha?: string; oddil?: number; vyskyt?: number; hledat?: string; zpet?: string; cas?: number; konec?: number };
 
 export const Route = createFileRoute("/knihy-ke-cteni")({
   validateSearch: (raw: Record<string, unknown>): ReaderSearch => {
@@ -49,6 +50,8 @@ export const Route = createFileRoute("/knihy-ke-cteni")({
     if (typeof raw["hledat"] === "string") out.hledat = raw["hledat"].slice(0, 80);
     const c = Number(raw["cas"]);
     if (raw["cas"] !== undefined && Number.isFinite(c) && c >= 0) out.cas = c;
+    const k = Number(raw["konec"]);
+    if (out.cas !== undefined && Number.isFinite(k) && k > out.cas) out.konec = k;
     const z = raw["zpet"];
     if (typeof z === "string" && z.startsWith("/") && !z.startsWith("//") && z.length <= 200) out.zpet = z;
     return out;
@@ -200,7 +203,7 @@ function ReadingBooksPage() {
       }
       if (first >= 0) target = first;
     }
-    setOpenSectionState({ slug: book.slug, number: search.oddil, bookName: book.name, section, paragraphs });
+    setOpenSectionState({ slug: book.slug, number: search.oddil, bookName: book.name, context: `${book.name} (${book.sanskrit}) • Oddíl ${search.oddil}${section.group ? ` · ${section.group}` : ""}`, section, paragraphs });
     setFlash(target);
     requestAnimationFrame(() => requestAnimationFrame(() => {
       document.querySelector(`[data-reading-paragraph="${target}"]`)?.scrollIntoView({ block: "center" });
@@ -313,7 +316,8 @@ function ReadingBooksPage() {
             const book = openSection.slug ? audiobookFor(openSection.slug) : undefined;
             const range = book && openSection.number ? book.sections[openSection.number] : undefined;
             return book && range && search.cas !== undefined ? (
-              <ReaderAudioBar audioUrl={book.audioUrl} range={range} startAt={search.cas} onTime={followAudio} />
+              <ReaderAudioBar audioUrl={book.audioUrl} range={range} startAt={search.cas} onTime={followAudio}
+                stopAt={search.konec} context={openSection.context} />
             ) : null;
           })()}
         </div>
