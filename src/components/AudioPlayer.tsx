@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { chapterAtTime, formatTime } from "@/lib/reader-time";
 import { createAudioAnalytics } from "@/lib/audio-analytics";
+import { createListeningSync, type ListeningStatus } from "@/lib/listening-sync";
 import { askAi } from "@/lib/ask-ai";
 import { setMediaSession } from "@/lib/background-audio";
 import {
@@ -222,6 +223,18 @@ export function AudioPlayer({
     el.preload = "metadata";
     audioEl.current = el;
     const analytics = createAudioAnalytics(() => callbacks.current.title);
+    const sync = createListeningSync();
+    const payload = (status: ListeningStatus) => {
+      const list = callbacks.current.chapters;
+      const ch = list?.length ? chapterAtTime(el.currentTime, list) : null;
+      return {
+        book_title: callbacks.current.title,
+        listened_seconds: Math.round(el.currentTime),
+        total_seconds: isFinite(el.duration) ? Math.round(el.duration) : 0,
+        status,
+        chapter: ch ? `Oddíl ${ch.index + 1}` : "",
+      };
+    };
     try {
       const raw = storageKey ? localStorage.getItem(storageKey) : null;
       if (raw) {
@@ -239,7 +252,10 @@ export function AudioPlayer({
       }
     };
     const onTime = () => {
-      if (!el.paused && !el.seeking) analytics.update(el.currentTime, performance.now(), el.playbackRate);
+      if (!el.paused && !el.seeking) {
+        analytics.update(el.currentTime, performance.now(), el.playbackRate);
+        sync.progress(payload("playing"), performance.now());
+      }
       setPosition(el.currentTime);
       saveAudioTime(el.currentTime);
       callbacks.current.onTime?.(el.currentTime);
@@ -268,6 +284,7 @@ export function AudioPlayer({
     const onEnded = () => {
       analytics.update(el.currentTime, performance.now(), el.playbackRate);
       analytics.complete();
+      sync.event(payload("completed"), performance.now());
       setPlaying(false);
       if (storageKey) saveAudioTime(el.duration, true);
       callbacks.current.onFinished?.();
@@ -283,12 +300,14 @@ export function AudioPlayer({
     const stopTick = () => { cancelAnimationFrame(raf); raf = 0; clockPublish(el.currentTime); };
     const onPlay = () => {
       analytics.play();
+      sync.event(payload("playing"), performance.now());
       setPlaying(true);
       if (!raf) raf = requestAnimationFrame(tick);
     };
     const onPause = () => {
       stopTick();
       analytics.suspend();
+      if (!el.ended) sync.event(payload("paused"), performance.now());
       setPlaying(false);
       setBuffering(false);
       saveAudioTime(el.currentTime, true);
