@@ -232,7 +232,7 @@ export function AudioPlayer({
         listened_seconds: Math.round(el.currentTime),
         total_seconds: isFinite(el.duration) ? Math.round(el.duration) : 0,
         status,
-        chapter: ch ? `Oddíl ${ch.index + 1}` : "",
+        chapter: ch ? ch.title : "",
       };
     };
     try {
