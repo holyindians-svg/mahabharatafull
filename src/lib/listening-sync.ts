@@ -1,7 +1,7 @@
 export const LISTENING_ENDPOINT =
-  "https://id-preview--01f7a48d-5fe5-48e1-9bfb-6249d113bcdf.lovable.app/api/public/listening";
+  "https://project--01f7a48d-5fe5-48e1-9bfb-6249d113bcdf-dev.lovable.app/api/public/listening";
 
-export type ListeningStatus = "playing" | "paused" | "completed";
+export type ListeningStatus = "playing" | "paused";
 export interface ListeningPayload {
   book_title: string;
   listened_seconds: number;

@@ -284,7 +284,7 @@ export function AudioPlayer({
     const onEnded = () => {
       analytics.update(el.currentTime, performance.now(), el.playbackRate);
       analytics.complete();
-      sync.event(payload("completed"), performance.now());
+      sync.event(payload("paused"), performance.now());
       setPlaying(false);
       if (storageKey) saveAudioTime(el.duration, true);
       callbacks.current.onFinished?.();
