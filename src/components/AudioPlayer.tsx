@@ -229,8 +229,8 @@ export function AudioPlayer({
       const ch = list?.length ? chapterAtTime(el.currentTime, list) : null;
       return {
         book_title: callbacks.current.title,
-        listened_seconds: Math.round(el.currentTime),
-        total_seconds: isFinite(el.duration) ? Math.round(el.duration) : 0,
+        listened_seconds: Math.floor(el.currentTime),
+        total_seconds: Number.isFinite(el.duration) ? Math.floor(el.duration) : null,
         status,
         chapter: ch ? ch.title : "",
       };
