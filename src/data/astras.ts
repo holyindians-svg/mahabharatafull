@@ -1,5 +1,7 @@
 import { imageFor } from "./images";
 import type { Astra } from "./types";
+import gadaImg from "@/assets/gada.png.asset.json";
+import gadaVideo from "@/assets/gada-loop.mp4.asset.json";
 
 const raw: Omit<Astra, "image">[] = [
   {
@@ -196,11 +198,32 @@ const raw: Omit<Astra, "image">[] = [
     power: 94,
     audioMinutes: 7,
   },
+  {
+    slug: "bhimova-gada",
+    name: "Bhímova Gadá",
+    sanskrit: "Gadā",
+    deity: "Váju",
+    owners: ["Bhíma"],
+    kind: "Palcát boha větru",
+    effect:
+      "Těžký kovaný palcát, jímž Bhíma drtil vozy, slony i celé šiky. Každý úder zní jako hrom a země se pod ním chvěje.",
+    lore: "Bhíma se v boji palcátem učil u Balarámy. Gadou zabil Džarásandhu, Kíčaku i všech sto Kauravovců a nakonec rozdrtil stehno Durjódhanovi.",
+    power: 86,
+    audioMinutes: 7,
+    video: gadaVideo.url,
+    storyTitle: "Bhímova Gadá: Drtivá síla boha větru",
+    story: [
+      "Bhíma, syn boha větru Váju, se narodil se silou, která překonávala lidskou míru. Už jako dítě lámal stromy a jeho bratranci Kauravovci se ho báli. Z celé výzbroje si nejvíc oblíbil gadu, těžký palcát, jímž lze vést úder silou samotné bouře.",
+      "Umění boje s palcátem jej naučil Balaráma, Krišnův starší bratr. Bhíma s gadou zápasil s králem Džarásandhou celé dny, až jej rozpůlil, a na Kurukšétře jí rozbíjel vozy i sloní šiky. Kdo uslyšel svist jeho palcátu, věděl, že vítr se obrátil proti němu.",
+      "Poslední souboj vedl u jezera s Durjódhanou, rovnocenným mistrem gady. Na Krišnovo znamení Bhíma udeřil do stehna a naplnil tak přísahu, kterou složil, když byla ve sněmovně pokořena Draupadí. Palcát se pak stal symbolem síly, jež slouží spravedlnosti, ale nese i tíhu porušeného pravidla.",
+    ],
+    keywords: ["Bhíma", "Bhímaséna", "Gadá", "palcát"],
+  },
 ];
 
 export const astras: Astra[] = raw.map((a) => ({
   ...a,
-  image: imageFor(`astra-${a.slug}`, 900, 700),
+  image: a.slug === "bhimova-gada" ? gadaImg.url : imageFor(`astra-${a.slug}`, 900, 700),
 }));
 
 export function getAstra(slug: string): Astra | undefined {

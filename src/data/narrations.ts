@@ -78,7 +78,8 @@ function astraNarration(slug: string): string | null {
     a.owners.length
       ? `Zbraň drželi nebo ovládali: ${list(a.owners)}. Její síla se v eposu hodnotí stupněm ${a.power} z deseti.`
       : `Její síla se v eposu hodnotí stupněm ${a.power} z deseti.`,
-  ].join("\n\n");
+    ...(a.story ? [a.storyTitle ?? "", ...a.story] : []),
+  ].filter(Boolean).join("\n\n");
 }
 
 export type NarrationKind = "character" | "parva" | "astra";

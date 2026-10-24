@@ -49,4 +49,9 @@ export interface Astra {
   power: number;
   image: string;
   audioMinutes: number;
+  video?: string;
+  storyTitle?: string;
+  story?: string[];
+  /** Klíčová slova pro výskyty v textu (výchozí: jméno). */
+  keywords?: string[];
 }
