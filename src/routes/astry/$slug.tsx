@@ -1,4 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { AstraIntroVideo } from "@/components/AstraIntroVideo";
 import { Sparkles } from "lucide-react";
 import { astras, getAstra } from "@/data/astras";
 import { characters } from "@/data/characters";
@@ -35,6 +37,8 @@ export const Route = createFileRoute("/astry/$slug")({
 
 function AstraDetail() {
   const { astra } = Route.useLoaderData();
+  const [settled, setSettled] = useState(!astra.video);
+  useEffect(() => setSettled(!astra.video), [astra.video]);
   const owners = astra.owners
     .map((name) => characters.find((c) => c.name === name))
     .filter(Boolean);
@@ -60,9 +64,8 @@ function AstraDetail() {
       <Page>
         {astra.video ? (
           <section className="mb-10 grid items-center gap-6 lg:grid-cols-2" aria-labelledby="story-title">
-            <video src={astra.video} autoPlay loop muted playsInline preload="auto" aria-hidden="true"
-              className="video-fade aspect-video w-full object-cover" />
-            <div className="rounded-2xl border border-primary/30 bg-surface/40 p-6 shadow-lg backdrop-blur-md">
+            <AstraIntroVideo key={astra.slug} src={astra.video} onSettle={() => setSettled(true)} />
+            <div aria-hidden={!settled} className={`rounded-2xl border border-primary/30 bg-surface/40 p-6 shadow-lg backdrop-blur-md transition-opacity duration-700 ${settled ? "opacity-100" : "opacity-0"}`}>
               <h2 id="story-title" className="font-display text-2xl"><span className="text-gilded">{astra.storyTitle}</span></h2>
               <div className="rule-gold mt-3 mb-4" />
               <div className="space-y-4 text-[15px] leading-relaxed text-sand">
