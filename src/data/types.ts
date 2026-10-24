@@ -52,6 +52,9 @@ export interface Astra {
   video?: string;
   storyTitle?: string;
   story?: string[];
+  /** Namluvené vyprávění (MP3) a titulky pro karaoke. */
+  audioUrl?: string;
+  cuesUrl?: string;
   /** Klíčová slova pro výskyty v textu (výchozí: jméno). */
   keywords?: string[];
 }

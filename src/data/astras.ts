@@ -212,11 +212,9 @@ const raw: Omit<Astra, "image">[] = [
     audioMinutes: 7,
     video: gadaVideo.url,
     storyTitle: "Bhímova Gadá: Drtivá síla boha větru",
-    story: [
-      "Bhíma, syn boha větru Váju, se narodil se silou, která překonávala lidskou míru. Už jako dítě lámal stromy a jeho bratranci Kauravovci se ho báli. Z celé výzbroje si nejvíc oblíbil gadu, těžký palcát, jímž lze vést úder silou samotné bouře.",
-      "Umění boje s palcátem jej naučil Balaráma, Krišnův starší bratr. Bhíma s gadou zápasil s králem Džarásandhou celé dny, až jej rozpůlil, a na Kurukšétře jí rozbíjel vozy i sloní šiky. Kdo uslyšel svist jeho palcátu, věděl, že vítr se obrátil proti němu.",
-      "Poslední souboj vedl u jezera s Durjódhanou, rovnocenným mistrem gady. Na Krišnovo znamení Bhíma udeřil do stehna a naplnil tak přísahu, kterou složil, když byla ve sněmovně pokořena Draupadí. Palcát se pak stal symbolem síly, jež slouží spravedlnosti, ale nese i tíhu porušeného pravidla.",
-    ],
+    audioUrl: "https://ckcnmvnjxziekezhzozh.supabase.co/storage/v1/object/public/audiobooks/MAHABHARATA/ZBRANE/Bhima_gada.mp3",
+    cuesUrl: "/audio-texty/bhimova-gada.json",
+    story: ["Představte si zbraň tak ohromnou, že už jen její přítomnost probouzí neklid a vzduch kolem ní zlověstně vibruje. Toto je legendární Bhímova Gadá, hrůzostrašný válečný palcát ukovaný z masivního, neproniknutelného černého železa (kārṣṇāyasa). Podle starobylých šáster vážila tato nezničitelná zbraň neuvěřitelných sto bhárů – v dnešním přepočtu téměř deset tun. Pro obyčejného smrtelníka by bylo naprosto nemožné s ní byť jen pohnout. Avšak Bhímaséna, v jehož žilách kolovala krev boha větru Vájua, s ní dokázal na bitevním poli máchat s děsivou lehkostí a dravostí hurikánu. Při detailním pohledu se na palcátu prolíná čistá, hrubá brutalita s královskou majestátností. Temné železné tělo je pevně opásáno lesklými prstenci z ryzího zlata a rukojeť je pevně svázána pro bezpečný úchop. Samotná mohutná hlavice je poseta drtícími hroty, pod kterými jsou do kruhu zavěšeny drobné rituální mosazné zvonky (kiṅkiṇī). Zpěvy Mahábháraty vyprávějí, že když Bhíma roztočil palcát nad hlavou, cinkání těchto zvonků se slilo v pronikavý, ledový svist, který zněl jako blížící se orkán a rozséval v řadách nepřátel paralyzující paniku. V posvátných textech je úder této Gady přirovnáván k dopadu nebeského blesku nebo k neúprosnému žezlu samotného boha smrti Jamy. Každý její dopad znamenal naprostou destrukci, od rozbitých válečných vozů až po zdecimované sloní formace. I když nyní palcát odpočívá na chladné chrámové podlaze, stále z něj sálá nezkrotná kosmická energie. Zlaté prstence a mosazné zvonky se jemně chvějí a celá zbraň tiše vyčkává, až ji její nezastavitelný pán znovu pozvedne."],
     keywords: ["Bhíma", "Bhímaséna", "Gadá", "palcát"],
   },
 ];

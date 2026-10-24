@@ -5,7 +5,7 @@ import { Volume2, X } from "lucide-react";
 type Phase = "intro" | "shrinking" | "done";
 
 /** Celoobrazovkový úvod se zvukem, který se po dohrání smrští do layoutu a pokračuje tichou smyčkou. */
-export function AstraIntroVideo({ src, onSettle }: { src: string; onSettle?: () => void }) {
+export function AstraIntroVideo({ src, onSettle }: { src: string; onSettle?: (autoplay: boolean) => void }) {
   const location = useLocation();
   const key = (location.state as { __TSR_key?: string } | undefined)?.__TSR_key ?? location.href;
   const storageKey = `intro-seen:${src}`;
@@ -18,14 +18,14 @@ export function AstraIntroVideo({ src, onSettle }: { src: string; onSettle?: () 
   const finish = (instant = false) => {
     try { sessionStorage.setItem(storageKey, key); } catch { /* ignore */ }
     const v = video.current;
-    if (v) { v.muted = true; v.loop = true; void v.play().catch(() => {}); }
+    if (v) { v.volume = 1; v.muted = true; v.loop = true; void v.play().catch(() => {}); }
     setNeedsSound(false);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const r = holder.current?.getBoundingClientRect();
-    if (instant || reduce || !r) { setPhase("done"); onSettle?.(); return; }
+    if (instant || reduce || !r) { setPhase("done"); onSettle?.(!instant); return; }
     setPhase("shrinking");
     requestAnimationFrame(() => setBox({ top: r.top, left: r.left, width: r.width, height: r.height, borderRadius: 16 }));
-    onSettle?.();
+    onSettle?.(true);
     window.setTimeout(() => setPhase("done"), 800);
   };
 
@@ -37,10 +37,20 @@ export function AstraIntroVideo({ src, onSettle }: { src: string; onSettle?: () 
     if (!v) return;
     v.muted = false;
     v.play().catch(() => { v.muted = true; setNeedsSound(true); void v.play().catch(() => {}); });
+    let raf = 0;
+    const fade = () => {
+      if (v.duration && v.currentTime >= v.duration - 2 && !v.ended) {
+        v.volume = Math.max(0, Math.min(1, (v.duration - v.currentTime) / 2));
+      }
+      raf = requestAnimationFrame(fade);
+    };
+    raf = requestAnimationFrame(fade);
+    const stopFade = () => { cancelAnimationFrame(raf); };
+    v.addEventListener("ended", stopFade);
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") finish(); };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+    return () => { cancelAnimationFrame(raf); v.removeEventListener("ended", stopFade); window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
