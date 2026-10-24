@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AstraIntroVideo } from "@/components/AstraIntroVideo";
 import { Sparkles } from "lucide-react";
 import { astras, getAstra } from "@/data/astras";
@@ -37,8 +37,9 @@ export const Route = createFileRoute("/astry/$slug")({
 
 function AstraDetail() {
   const { astra } = Route.useLoaderData();
-  const [settled, setSettled] = useState(!astra.video);
-  useEffect(() => setSettled(!astra.video), [astra.video]);
+  const [settledSlug, setSettledSlug] = useState<string | null>(null);
+  const settled = !astra.video || settledSlug === astra.slug;
+  const setSettled = (_: boolean) => setSettledSlug(astra.slug);
   const owners = astra.owners
     .map((name) => characters.find((c) => c.name === name))
     .filter(Boolean);
