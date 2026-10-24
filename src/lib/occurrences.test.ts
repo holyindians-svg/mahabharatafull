@@ -19,3 +19,11 @@ describe("nameMatcher", () => {
     eq(m, [5, 12]);
   });
 });
+
+describe("namesMatcher (Bhímova Gadá)", () => {
+  it("najde palcátem i Bhímasénovi", async () => {
+    const { namesMatcher } = await import("./occurrences");
+    const re = namesMatcher(["Bhíma", "Bhímaséna", "Gadá", "palcát"]);
+    eq(matchesIn("Udeřil palcátem a Bhímasénovi se poklonili.", re).length, 2);
+  });
+});
