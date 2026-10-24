@@ -1,8 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { KaraokeText } from "@/components/KaraokeText";
-import type { AudioPlayerHandle } from "@/components/AudioPlayer";
-import { AstraIntroVideo } from "@/components/AstraIntroVideo";
+import { StoryIntro } from "@/components/StoryIntro";
 import { Sparkles } from "lucide-react";
 import { astras, getAstra } from "@/data/astras";
 import { characters } from "@/data/characters";
@@ -39,21 +36,6 @@ export const Route = createFileRoute("/astry/$slug")({
 
 function AstraDetail() {
   const { astra } = Route.useLoaderData();
-  const [settledSlug, setSettledSlug] = useState<string | null>(null);
-  const settled = !astra.video || settledSlug === astra.slug;
-  const player = useRef<AudioPlayerHandle | null>(null);
-  const [time, setTime] = useState(0);
-  const narrated = useRef<string | null>(null);
-  const startNarration = () => {
-    if (!astra.audioUrl || narrated.current === astra.slug) return;
-    narrated.current = astra.slug;
-    setSettledSlug(astra.slug);
-    player.current?.playRange(0);
-  };
-  const setSettled = (autoplay: boolean) => {
-    setSettledSlug(astra.slug);
-    if (autoplay) startNarration();
-  };
   const owners = astra.owners
     .map((name) => characters.find((c) => c.name === name))
     .filter(Boolean);
@@ -78,34 +60,7 @@ function AstraDetail() {
 
       <Page>
         {astra.video ? (
-          <section className="mb-10 grid items-center gap-6 lg:grid-cols-2" aria-labelledby="story-title">
-            <AstraIntroVideo key={astra.slug} src={astra.video} onCrossfade={startNarration} onSettle={setSettled} />
-            <div aria-hidden={!settled} className={`rounded-2xl border border-primary/30 bg-surface/40 p-6 shadow-lg backdrop-blur-md transition-opacity duration-700 ${settled ? "opacity-100" : "opacity-0"}`}>
-              <h2 id="story-title" className="font-display text-2xl"><span className="text-gilded">{astra.storyTitle}</span></h2>
-              <div className="rule-gold mt-3 mb-4" />
-              {astra.audioUrl && astra.cuesUrl ? (
-                <>
-                  <div className="text-sand">
-                    <KaraokeText cuesUrl={astra.cuesUrl} number={1} time={time} onSeek={(t) => player.current?.seek(t)} />
-                  </div>
-                  <AudioPlayer
-                    className="mt-4"
-                    title={astra.storyTitle ?? astra.name}
-                    subtitle="Vyprávění"
-                    minutes={astra.audioMinutes}
-                    audioUrl={astra.audioUrl}
-                    progressKey={`astra-story:${astra.slug}`}
-                    controlRef={player}
-                    onTime={setTime}
-                  />
-                </>
-              ) : (
-                <div className="space-y-4 text-[15px] leading-relaxed text-sand">
-                  {astra.story?.map((p, i) => <p key={i}>{p}</p>)}
-                </div>
-              )}
-            </div>
-          </section>
+          <StoryIntro key={astra.slug} id={astra.slug} name={astra.name} video={astra.video} storyTitle={astra.storyTitle} story={astra.story} audioUrl={astra.audioUrl} cuesUrl={astra.cuesUrl} minutes={astra.audioMinutes} />
         ) : null}
         <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div>

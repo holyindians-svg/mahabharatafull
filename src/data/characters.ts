@@ -1,4 +1,5 @@
 import { imageFor } from "./images";
+import bhimaVideo from "@/assets/bhima-loop.mp4.asset.json";
 import type { Character, CharacterGroup } from "./types";
 
 export const characterGroups: CharacterGroup[] = [
@@ -200,6 +201,11 @@ const raw: Omit<Character, "image">[] = [
       "Syn boha větru Váju, bojovník s kyjem, jehož síla vyvažovala celé vojsko. Nezapomněl žádné ponížení Draupadí a v posledním souboji srazil Durjódhanu.",
     relations: ["Syn Kuntí a Váju", "Otec Ghatótkači", "Bratr Hanumánův duchem"],
     audioMinutes: 23,
+    video: bhimaVideo.url,
+    storyTitle: "Bhímaséna: Nespoutaná síla bouře",
+    audioUrl: "https://ckcnmvnjxziekezhzozh.supabase.co/storage/v1/object/public/audiobooks/MAHABHARATA/ZBRANE/OSOBY/Bhima.mp3",
+    cuesUrl: "/audio-texty/bhima.json",
+    keywords: ["Bhíma", "Bhímaséna", "Vrkódara", "Pánduovec"],
   },
   {
     slug: "ardzuna",
