@@ -142,20 +142,22 @@ export function AstraIntroVideo({ src, onCrossfade, onSettle }: Props) {
       {phase !== "done" ? (
         <div className={`fixed inset-0 z-[59] bg-background transition-opacity duration-700 ${phase === "intro" ? "opacity-100" : "pointer-events-none opacity-0"}`} />
       ) : null}
-      <video
-        ref={video}
-        src={src}
-        playsInline
-        preload="auto"
-        autoPlay
-        muted={phase !== "intro"}
-        loop={phase !== "intro"}
-        onEnded={() => phase === "intro" && finish()}
-        onClick={() => phase === "intro" && finish()}
-        aria-hidden="true"
-        style={style}
-        className={fixed ? "object-cover" : "video-fade absolute inset-0 size-full object-cover"}
-      />
+      <div style={style} className={fixed ? "" : "absolute inset-0 overflow-hidden rounded-2xl"}>
+        <video
+          ref={video}
+          src={src}
+          playsInline
+          preload="auto"
+          autoPlay
+          muted={phase !== "intro"}
+          loop={phase !== "intro"}
+          onEnded={() => phase === "intro" && finish()}
+          onClick={() => phase === "intro" && finish()}
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-cover"
+        />
+        <LotusFrame />
+      </div>
       {phase === "intro" ? (
         <div className="fixed bottom-6 right-6 z-[61] flex gap-2">
           {needsSound ? (
