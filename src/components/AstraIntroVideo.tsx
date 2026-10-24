@@ -142,20 +142,22 @@ export function AstraIntroVideo({ src, onCrossfade, onSettle }: Props) {
       {phase !== "done" ? (
         <div className={`fixed inset-0 z-[59] bg-background transition-opacity duration-700 ${phase === "intro" ? "opacity-100" : "pointer-events-none opacity-0"}`} />
       ) : null}
-      <video
-        ref={video}
-        src={src}
-        playsInline
-        preload="auto"
-        autoPlay
-        muted={phase !== "intro"}
-        loop={phase !== "intro"}
-        onEnded={() => phase === "intro" && finish()}
-        onClick={() => phase === "intro" && finish()}
-        aria-hidden="true"
-        style={style}
-        className={fixed ? "object-cover" : "video-fade absolute inset-0 size-full object-cover"}
-      />
+      <div style={style} className={fixed ? "" : "absolute inset-0 overflow-hidden rounded-2xl"}>
+        <video
+          ref={video}
+          src={src}
+          playsInline
+          preload="auto"
+          autoPlay
+          muted={phase !== "intro"}
+          loop={phase !== "intro"}
+          onEnded={() => phase === "intro" && finish()}
+          onClick={() => phase === "intro" && finish()}
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-cover"
+        />
+        <LotusFrame />
+      </div>
       {phase === "intro" ? (
         <div className="fixed bottom-6 right-6 z-[61] flex gap-2">
           {needsSound ? (
@@ -170,6 +172,30 @@ export function AstraIntroVideo({ src, onCrossfade, onSettle }: Props) {
           </button>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** Zlatý vnitřní rámeček s lotosovými rohy; škáluje se spolu s videem. */
+function LotusFrame() {
+  const corners = ["left-0 top-0", "right-0 top-0 rotate-90", "right-0 bottom-0 rotate-180", "left-0 bottom-0 -rotate-90"];
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+      <div className="absolute inset-[2.5%] rounded-xl border border-primary/60 shadow-[inset_0_0_40px_8px_color-mix(in_oklab,var(--background)_75%,transparent),0_0_12px_color-mix(in_oklab,var(--primary)_35%,transparent)]" />
+      {corners.map((c) => (
+        <svg key={c} viewBox="0 0 100 100" className={`absolute aspect-square w-[11%] text-primary/80 drop-shadow-[0_0_4px_color-mix(in_oklab,var(--primary)_60%,transparent)] ${c}`}>
+          <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+            <path d="M14 60 V14 H60" />
+            <path d="M22 44 V22 H44" opacity=".7" />
+            <path d="M28 28 C34 44 46 52 60 54 C50 46 44 36 42 28 C36 26 32 26 28 28Z" fill="currentColor" fillOpacity=".25" />
+            <path d="M28 28 C44 34 52 46 54 60 C46 50 36 44 28 42 C26 36 26 32 28 28Z" fill="currentColor" fillOpacity=".25" />
+            <path d="M28 28 C42 30 54 42 56 56" />
+            <circle cx="14" cy="14" r="3" fill="currentColor" />
+            <circle cx="60" cy="14" r="1.8" fill="currentColor" />
+            <circle cx="14" cy="60" r="1.8" fill="currentColor" />
+          </g>
+        </svg>
+      ))}
     </div>
   );
 }
