@@ -88,19 +88,36 @@ export function AstraIntroVideo({ src, onCrossfade, onSettle }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Zámek rolování jen během fáze úvodu; cleanup ho uvolní při smrštění i při odchodu ze stránky.
+  // Zámek rolování jen během fáze úvodu (bez blokování gest); cleanup ho uvolní při smrštění i odchodu.
   useEffect(() => {
     if (phase !== "intro") return;
-    const block = (e: Event) => e.preventDefault();
-    const body = document.body.style.overflow, html = document.documentElement.style.overflow;
-    window.addEventListener("wheel", block, { passive: false });
-    window.addEventListener("touchmove", block, { passive: false });
+    const b = document.body.style, h = document.documentElement.style;
+    const prevB = b.overflow, prevH = h.overflow;
+    b.overflow = "hidden"; h.overflow = "hidden";
+    const v = video.current;
+    const ms = v && v.duration && isFinite(v.duration) ? (v.duration + 2) * 1000 : 12000;
+    const t = window.setTimeout(() => finish(), ms);
+    const onMeta = () => { window.clearTimeout(t); };
+    v?.addEventListener("loadedmetadata", onMeta, { once: true });
+    const t2 = window.setTimeout(() => { const d = video.current?.duration; if (!finished.current && d && isFinite(d) && (video.current?.currentTime ?? 0) < 0.1) finish(); }, 8000);
     return () => {
-      window.removeEventListener("wheel", block);
-      window.removeEventListener("touchmove", block);
-      document.body.style.overflow = body === "hidden" ? "" : body;
-      document.documentElement.style.overflow = html === "hidden" ? "" : html;
+      window.clearTimeout(t); window.clearTimeout(t2);
+      v?.removeEventListener("loadedmetadata", onMeta);
+      b.overflow = prevB === "hidden" ? "" : prevB;
+      h.overflow = prevH === "hidden" ? "" : prevH;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  // Záložní ukončení podle skutečné délky videa.
+  useEffect(() => {
+    const v = video.current;
+    if (!v || phase !== "intro") return;
+    let t = 0;
+    const arm = () => { window.clearTimeout(t); t = window.setTimeout(() => finish(), (v.duration + 2) * 1000); };
+    if (v.duration && isFinite(v.duration)) arm(); else v.addEventListener("loadedmetadata", arm, { once: true });
+    return () => { window.clearTimeout(t); v.removeEventListener("loadedmetadata", arm); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   const fixed = phase !== "done" && rect;
