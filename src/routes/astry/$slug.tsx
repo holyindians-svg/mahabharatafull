@@ -58,6 +58,19 @@ function AstraDetail() {
       </section>
 
       <Page>
+        {astra.video ? (
+          <section className="mb-10 grid items-center gap-6 lg:grid-cols-2" aria-labelledby="story-title">
+            <video src={astra.video} autoPlay loop muted playsInline preload="auto" aria-hidden="true"
+              className="video-fade aspect-video w-full object-cover" />
+            <div className="rounded-2xl border border-primary/30 bg-surface/40 p-6 shadow-lg backdrop-blur-md">
+              <h2 id="story-title" className="font-display text-2xl"><span className="text-gilded">{astra.storyTitle}</span></h2>
+              <div className="rule-gold mt-3 mb-4" />
+              <div className="space-y-4 text-[15px] leading-relaxed text-sand">
+                {astra.story?.map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+            </div>
+          </section>
+        ) : null}
         <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div>
             <h2 className="flex items-center gap-2 text-xl">
@@ -68,7 +81,7 @@ function AstraDetail() {
 
             <h3 className="mt-9 font-display text-lg">V eposu</h3>
             <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{astra.lore}</p>
-            <Occurrences name={astra.name} />
+            <Occurrences name={astra.name} names={astra.keywords} />
 
             <div className="mt-8 rounded-xl border border-border bg-surface/70 p-5">
               <div className="flex items-center justify-between text-sm">

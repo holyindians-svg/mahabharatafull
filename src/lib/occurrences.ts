@@ -59,8 +59,13 @@ export function matchesIn(text: string, re: RegExp): [number, number][] {
 
 const sectionNumber = (title: string) => Number(/(\d+)/.exec(title)?.[1] ?? 0);
 
-export async function findOccurrences(name: string): Promise<Occurrence[]> {
-  const re = nameMatcher(name);
+export function namesMatcher(names: string[]): RegExp {
+  const src = names.map(namePattern).filter(Boolean).join("|");
+  return new RegExp(src || "(?!)", "g");
+}
+
+export async function findOccurrences(name: string | string[]): Promise<Occurrence[]> {
+  const re = Array.isArray(name) ? namesMatcher(name) : nameMatcher(name);
   const result: Occurrence[] = [];
   for (const slug of FULL_TEXT_BOOKS) {
     const bookName = parvas.find((p) => p.slug === slug)?.name ?? slug;
