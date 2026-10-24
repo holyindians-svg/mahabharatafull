@@ -127,7 +127,7 @@ function CharacterDetail() {
               <Chip className="hover:border-primary/50 hover:text-primary">{group.title}</Chip>
             </Link>
           </div>
-          <Occurrences name={character.name} />
+          <Occurrences name={character.name} names={character.keywords} />
         </div>
       </div>
 
