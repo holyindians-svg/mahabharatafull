@@ -43,9 +43,16 @@ function AstraDetail() {
   const settled = !astra.video || settledSlug === astra.slug;
   const player = useRef<AudioPlayerHandle | null>(null);
   const [time, setTime] = useState(0);
+  const narrated = useRef<string | null>(null);
+  const startNarration = () => {
+    if (!astra.audioUrl || narrated.current === astra.slug) return;
+    narrated.current = astra.slug;
+    setSettledSlug(astra.slug);
+    player.current?.playRange(0);
+  };
   const setSettled = (autoplay: boolean) => {
     setSettledSlug(astra.slug);
-    if (autoplay && astra.audioUrl) player.current?.playRange(0);
+    if (autoplay) startNarration();
   };
   const owners = astra.owners
     .map((name) => characters.find((c) => c.name === name))
@@ -72,7 +79,7 @@ function AstraDetail() {
       <Page>
         {astra.video ? (
           <section className="mb-10 grid items-center gap-6 lg:grid-cols-2" aria-labelledby="story-title">
-            <AstraIntroVideo key={astra.slug} src={astra.video} onSettle={setSettled} />
+            <AstraIntroVideo key={astra.slug} src={astra.video} onCrossfade={startNarration} onSettle={setSettled} />
             <div aria-hidden={!settled} className={`rounded-2xl border border-primary/30 bg-surface/40 p-6 shadow-lg backdrop-blur-md transition-opacity duration-700 ${settled ? "opacity-100" : "opacity-0"}`}>
               <h2 id="story-title" className="font-display text-2xl"><span className="text-gilded">{astra.storyTitle}</span></h2>
               <div className="rule-gold mt-3 mb-4" />
