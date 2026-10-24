@@ -7,10 +7,10 @@ type Props = {
   id: string;
   name: string;
   video: string;
-  storyTitle?: string;
-  story?: string[];
-  audioUrl?: string;
-  cuesUrl?: string;
+  storyTitle?: string | undefined;
+  story?: string[] | undefined;
+  audioUrl?: string | undefined;
+  cuesUrl?: string | undefined;
   minutes: number;
 };
 
