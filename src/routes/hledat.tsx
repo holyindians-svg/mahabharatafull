@@ -49,7 +49,7 @@ function SearchPage() {
         norm(`${p.name} ${p.sanskrit} ${p.subtitle} ${p.summary} ${p.events.join(" ")}`).includes(q),
       ),
       characters: characters.filter((c) =>
-        norm(`${c.name} ${c.sanskrit} ${c.epithet} ${c.description} ${c.relations.join(" ")}`).includes(
+        norm(`${c.name} ${c.sanskrit} ${c.epithet} ${c.description} ${c.relations.join(" ")} ${(c.keywords ?? []).join(" ")} ${c.storyTitle ?? ""}`).includes(
           q,
         ),
       ),

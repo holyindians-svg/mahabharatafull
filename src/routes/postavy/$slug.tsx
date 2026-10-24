@@ -11,6 +11,7 @@ import { primeAudioPlayback } from "@/lib/speak";
 import { EntityCard } from "@/components/EntityCard";
 import { BackLink, Chip, Page, Section } from "@/components/Bits";
 import { Occurrences } from "@/components/Occurrences";
+import { StoryIntro } from "@/components/StoryIntro";
 
 export const Route = createFileRoute("/postavy/$slug")({
   loader: ({ params }) => {
@@ -52,6 +53,12 @@ function CharacterDetail() {
   return (
     <Page>
       <BackLink to="/postavy">Zpět na postavy</BackLink>
+      {character.video ? (
+        <div className="mt-6">
+          <StoryIntro key={character.slug} id={character.slug} name={character.name} video={character.video} storyTitle={character.storyTitle} audioUrl={character.audioUrl} cuesUrl={character.cuesUrl} minutes={character.audioMinutes} />
+        </div>
+      ) : null}
+
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[420px_1fr]">
         <div>

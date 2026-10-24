@@ -22,6 +22,11 @@ export interface Character {
   relations: string[];
   image: string;
   audioMinutes: number;
+  video?: string;
+  storyTitle?: string;
+  audioUrl?: string;
+  cuesUrl?: string;
+  keywords?: string[];
 }
 
 export interface Parva {
