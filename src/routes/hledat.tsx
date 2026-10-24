@@ -54,7 +54,7 @@ function SearchPage() {
         ),
       ),
       astras: astras.filter((a) =>
-        norm(`${a.name} ${a.sanskrit} ${a.deity} ${a.effect} ${a.lore} ${a.owners.join(" ")}`).includes(
+        norm(`${a.name} ${a.sanskrit} ${a.deity} ${a.effect} ${a.lore} ${a.owners.join(" ")} ${(a.keywords ?? []).join(" ")} ${(a.story ?? []).join(" ")}`).includes(
           q,
         ),
       ),
