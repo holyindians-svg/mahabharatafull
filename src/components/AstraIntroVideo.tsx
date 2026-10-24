@@ -78,25 +78,29 @@ export function AstraIntroVideo({ src, onCrossfade, onSettle }: Props) {
     };
     raf = requestAnimationFrame(tick);
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") finish(); };
-    const block = (e: Event) => e.preventDefault();
     window.addEventListener("keydown", onKey);
-    window.addEventListener("wheel", block, { passive: false });
-    window.addEventListener("touchmove", block, { passive: false });
     window.addEventListener("resize", measure);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("wheel", block);
-      window.removeEventListener("touchmove", block);
       window.removeEventListener("resize", measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Zámek rolování jen během fáze úvodu; cleanup ho uvolní při smrštění i při odchodu ze stránky.
   useEffect(() => {
-    if (phase === "intro") return;
-    const unblock = (e: Event) => e.stopPropagation();
-    void unblock;
+    if (phase !== "intro") return;
+    const block = (e: Event) => e.preventDefault();
+    const body = document.body.style.overflow, html = document.documentElement.style.overflow;
+    window.addEventListener("wheel", block, { passive: false });
+    window.addEventListener("touchmove", block, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", block);
+      window.removeEventListener("touchmove", block);
+      document.body.style.overflow = body === "hidden" ? "" : body;
+      document.documentElement.style.overflow = html === "hidden" ? "" : html;
+    };
   }, [phase]);
 
   const fixed = phase !== "done" && rect;
