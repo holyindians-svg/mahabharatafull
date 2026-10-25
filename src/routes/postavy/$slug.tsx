@@ -75,7 +75,6 @@ function CharacterDetail() {
             <AudioPlayer
               title={character.name}
               subtitle="Životopis – předčítání"
-              minutes={character.audioMinutes}
               context={`Postava: ${character.name} (${character.sanskrit}) — ${character.epithet}`}
               question={question}
               presetText={presetText}
@@ -144,7 +143,6 @@ function CharacterDetail() {
                 title={a.name}
                 sanskrit={a.sanskrit}
                 text={a.effect}
-                minutes={a.audioMinutes}
               />
             ))}
           </div>
@@ -164,7 +162,6 @@ function CharacterDetail() {
                 title={p.name}
                 sanskrit={p.sanskrit}
                 text={p.subtitle}
-                minutes={p.audioMinutes}
               />
             ))}
           </div>

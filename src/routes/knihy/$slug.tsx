@@ -290,7 +290,6 @@ function BookDetail() {
             <AudioPlayer
               title={parva.name}
               subtitle={`${parva.sanskrit} · předčítání`}
-              minutes={parva.audioMinutes}
               context={`Kniha: ${parva.order}. ${parva.name} (${parva.sanskrit}) — ${parva.subtitle}`}
               presetText={narrationFor("parva", parva.slug)}
               segments={book?.segments}
@@ -420,7 +419,6 @@ function BookDetail() {
                 key={`${parva.slug}-${section.fromSegment}`}
                 title={section.title}
                 subtitle={`${parva.name} · oddíl`}
-                minutes={sectionMinutes}
                 segments={sectionBook.segments}
                 paragraphIndex={sectionBook.paragraphIndex}
                 progressKey={`book:${parva.slug}:section:${section.fromSegment}`}
@@ -457,7 +455,6 @@ function BookDetail() {
                   title={c!.name}
                   sanskrit={c!.sanskrit}
                   text={c!.description}
-                  minutes={c!.audioMinutes}
                 />
               ))}
             </div>
@@ -474,7 +471,6 @@ function BookDetail() {
               title={next.name}
               sanskrit={next.sanskrit}
               text={next.subtitle}
-              minutes={next.audioMinutes}
             />
           </div>
         </Section>

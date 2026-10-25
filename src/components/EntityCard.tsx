@@ -62,12 +62,6 @@ export function EntityCard({
         </h3>
         {sanskrit ? <p className="mt-0.5 text-xs text-primary/80">{sanskrit}</p> : null}
         <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{text}</p>
-        {minutes ? (
-          <p className="mt-4 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-            <Headphones className="size-3.5 text-primary" />
-            {minutes} min předčítání
-          </p>
-        ) : null}
       </div>
     </Link>
   );

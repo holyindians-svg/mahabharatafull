@@ -171,6 +171,7 @@ export function AudioPlayer({
   const fallbackDuration = Math.max(60, Math.round(minutes * 60));
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(fallbackDuration);
+  const [realDuration, setRealDuration] = useState(false);
 
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<number>(1);
@@ -245,7 +246,7 @@ export function AudioPlayer({
       // uložená pozice je poškozená
     }
     const onMeta = () => {
-      if (isFinite(el.duration) && el.duration > 0) setDuration(el.duration);
+      if (isFinite(el.duration) && el.duration > 0) { setDuration(el.duration); setRealDuration(true); }
       if (pendingTime.current !== null) {
         el.currentTime = Math.min(pendingTime.current, Math.max(0, el.duration - 1));
         pendingTime.current = null;
@@ -876,9 +877,6 @@ export function AudioPlayer({
             <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
-        <span className="shrink-0 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-          {minutes} min
-        </span>
       </div>
 
       <div className="mt-5 flex min-w-0 items-center gap-4">
@@ -915,7 +913,7 @@ export function AudioPlayer({
           />
           <div className="mt-2 flex items-center justify-between text-xs tabular-nums text-muted-foreground">
             <span>{formatTime(position)}</span>
-            <span>{formatTime(duration)}</span>
+            <span>{audioMode ? (realDuration ? formatTime(duration) : "–:––") : ""}</span>
           </div>
         </div>
       </div>

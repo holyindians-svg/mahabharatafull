@@ -152,7 +152,6 @@ function Home() {
                 title={p.name}
                 sanskrit={p.sanskrit}
                 text={p.subtitle}
-                minutes={p.audioMinutes}
               />
             ))}
           </div>
@@ -163,7 +162,6 @@ function Home() {
             <AudioPlayer
               title="Bhagavadgíta – zpěv Vznešeného"
               subtitle="Bhíšma Parva, rozhovor Krišny s Ardžunou"
-              minutes={parvas[5]!.audioMinutes}
             />
             <p className="text-sm leading-relaxed text-muted-foreground">
               Každá kniha, postava i zbraň má v detailu vlastní panel předčítání. Můžete si vybrat
@@ -185,7 +183,6 @@ function Home() {
                 title={a.name}
                 sanskrit={a.sanskrit}
                 text={a.effect}
-                minutes={a.audioMinutes}
               />
             ))}
           </div>

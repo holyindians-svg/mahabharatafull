@@ -92,7 +92,6 @@ function AstraDetail() {
             <AudioPlayer
               title={astra.name}
               subtitle="Popis zbraně – předčítání"
-              minutes={astra.audioMinutes}
               context={`Zbraň: ${astra.name} (${astra.sanskrit}) — ${astra.kind}`}
               presetText={narrationFor("astra", astra.slug)}
             />
@@ -144,7 +143,6 @@ function AstraDetail() {
                 title={a.name}
                 sanskrit={a.sanskrit}
                 text={a.effect}
-                minutes={a.audioMinutes}
               />
             ))}
           </div>

@@ -44,7 +44,6 @@ function Books() {
             title={p.name}
             sanskrit={`${p.sanskrit} · ${p.subtitle}`}
             text={p.summary}
-            minutes={p.audioMinutes}
             className="border-primary/20"
           />
         ))}
