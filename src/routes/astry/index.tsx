@@ -44,7 +44,6 @@ function Astras() {
             title={a.name}
             sanskrit={`${a.sanskrit} · ${a.deity}`}
             text={a.effect}
-            minutes={a.audioMinutes}
             className="border-primary/20"
           />
         ))}

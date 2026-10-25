@@ -93,7 +93,6 @@ function People() {
             title={c.name}
             sanskrit={c.sanskrit}
             text={c.description}
-            minutes={c.audioMinutes}
             tall
           />
         ))}
