@@ -40,7 +40,7 @@ interface AudioPlayerProps {
   title: string;
   subtitle?: string;
   /** Odhadovaná délka nahrávky v minutách. */
-  minutes: number;
+  minutes?: number;
   className?: string;
   /** Kontext položky (postava / kniha / zbraň) pro dotaz do textu. */
   context?: string | undefined;
@@ -168,7 +168,7 @@ export function AudioPlayer({
       }, 15000);
     }
   };
-  const fallbackDuration = Math.max(60, Math.round(minutes * 60));
+  const fallbackDuration = Math.max(60, Math.round((minutes ?? 1) * 60));
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(fallbackDuration);
   const [realDuration, setRealDuration] = useState(false);
