@@ -1,5 +1,6 @@
 import { imageFor } from "./images";
 import bhimaVideo from "@/assets/bhima-loop.mp4.asset.json";
+import ardzunaVideo from "@/assets/ardzuna-loop.mp4.asset.json";
 import type { Character, CharacterGroup } from "./types";
 
 export const characterGroups: CharacterGroup[] = [
@@ -217,6 +218,11 @@ const raw: Omit<Character, "image">[] = [
       "Syn Indry a nejlepší lukostřelec světa, majitel luku Gándíva. Přítel a žák Krišny, jemuž na Kurukšétře zazněla Bhagavadgíta. Jeho pochybnost na počátku bitvy se stala nejslavnějším rozhovorem indické tradice.",
     relations: ["Syn Kuntí a Indry", "Přítel Krišny", "Otec Abhimanjua"],
     audioMinutes: 28,
+    video: ardzunaVideo.url,
+    storyTitle: "Ardžuna: Dokonalý lučištník a nositel Gándívy",
+    audioUrl: "https://ckcnmvnjxziekezhzozh.supabase.co/storage/v1/object/public/audiobooks/MAHABHARATA/ZBRANE/OSOBY/Arjuna.mp3",
+    cuesUrl: "/audio-texty/ardzuna.json",
+    keywords: ["Ardžuna", "Arjuna", "Pártha", "Gándíva"],
   },
   {
     slug: "nakula",
