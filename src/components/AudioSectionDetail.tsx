@@ -1,9 +1,11 @@
 import { Maximize2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KaraokeText } from "@/components/KaraokeText";
+import { OfflineDownloadButton } from "@/components/OfflineDownloadButton";
 import { formatTime, sectionProgress, type SectionRange } from "@/lib/reader-time";
 
 interface Props {
+  bookId?: string;
   title: string;
   number: number;
   cuesUrl: string;
@@ -14,7 +16,7 @@ interface Props {
   onExpand: () => void;
 }
 
-export function AudioSectionDetail({ title, number, cuesUrl, time, range, onPlaySection, onSeek, onExpand }: Props) {
+export function AudioSectionDetail({ bookId, title, number, cuesUrl, time, range, onPlaySection, onSeek, onExpand }: Props) {
   const { elapsed, duration } = sectionProgress(time, range);
   return (
     <div className="rounded-xl border border-border bg-surface/70 p-5">
@@ -35,6 +37,7 @@ export function AudioSectionDetail({ title, number, cuesUrl, time, range, onPlay
           </Button>
         </div>
       </div>
+      {bookId ? <OfflineDownloadButton bookId={bookId} className="mt-4" /> : null}
       <KaraokeText cuesUrl={cuesUrl} number={number} time={time} onSeek={onSeek} />
     </div>
   );

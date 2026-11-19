@@ -1,3 +1,4 @@
+import { getOfflineAudioUrl } from "@/lib/offline-audio-store";
 import {
   useEffect,
   useMemo,
@@ -223,6 +224,14 @@ export function AudioPlayer({
     el.src = audioUrl;
     el.preload = "metadata";
     audioEl.current = el;
+    // Stažená kniha: přepnout zdroj na offline kopii, dokud nic nehraje.
+    let disposed = false;
+    void getOfflineAudioUrl(audioUrl).then((offline) => {
+      if (disposed || !offline || !el.paused) return;
+      const t = el.currentTime;
+      el.src = offline;
+      if (t > 0) pendingTime.current = t;
+    });
     const analytics = createAudioAnalytics(() => callbacks.current.title);
     const sync = createListeningSync();
     const payload = (status: ListeningStatus) => {
@@ -342,6 +351,7 @@ export function AudioPlayer({
     el.addEventListener("seeked", onSeeked);
     el.addEventListener("error", onErr);
     return () => {
+      disposed = true;
       cancelAnimationFrame(raf);
       el.removeEventListener("play", onPlay);
       el.removeEventListener("pause", onPause);

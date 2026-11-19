@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { narrationFor } from "@/data/narrations";
 import { audiobookFor } from "@/data/audiobooks";
 import { AudioSectionDetail } from "@/components/AudioSectionDetail";
+import { OfflineDownloadButton } from "@/components/OfflineDownloadButton";
 import { onBookUpdated } from "@/lib/text-store";
 import {
   bookFallback,
@@ -305,6 +306,7 @@ function BookDetail() {
               onTime={audioBook?.cuesUrl ? setAudioTime : undefined}
               onPlaybackState={audioBook ? setPlayback : undefined}
             />
+            {audioBook ? <OfflineDownloadButton bookId={parva.slug} /> : null}
             {audioBook?.cuesUrl && readerChapter ? (
               <>
                 <Button variant="outline" className="press min-h-11 w-full" onClick={expandReader}>
@@ -399,6 +401,7 @@ function BookDetail() {
 
             {audioBook?.cuesUrl && openSection !== null && detailSection && timeOf(openSection) ? (
               <AudioSectionDetail
+                bookId={parva.slug}
                 key={openSection}
                 title={detailSection.title}
                 number={Number(/(\d+)/.exec(detailSection.title)?.[1])}

@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { BookOpen, BookOpenText, Download, Flame, Home, Menu, Search, Settings, Sparkles, Swords, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RefreshButton } from "@/components/RefreshButton";
+import { OfflineStorageDialog } from "@/components/OfflineStorageDialog";
 import { parvas } from "@/data/parvas";
 import { characters, characterGroups } from "@/data/characters";
 import { astras } from "@/data/astras";
@@ -170,6 +171,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="font-display text-base text-gilded">Mahábhárata</span>
         </Link>
         <div className="flex items-center gap-2">
+          <OfflineStorageDialog />
           <RefreshButton />
           <button
             type="button"
@@ -204,7 +206,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       ) : null}
 
-      <RefreshButton className="fixed right-4 top-4 z-40 hidden lg:grid" />
+      <div className="fixed right-4 top-4 z-40 hidden gap-2 lg:flex">
+        <OfflineStorageDialog />
+        <RefreshButton />
+      </div>
 
       <main className="min-w-0">{children}</main>
     </div>

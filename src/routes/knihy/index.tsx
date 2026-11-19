@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { parvas } from "@/data/parvas";
 import { EntityCard } from "@/components/EntityCard";
+import { OfflineDownloadButton } from "@/components/OfflineDownloadButton";
+import { audiobooks } from "@/data/audiobooks";
 import { Page, PageHeader } from "@/components/Bits";
 
 export const Route = createFileRoute("/knihy/")({
@@ -35,8 +37,8 @@ function Books() {
       />
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {parvas.map((p) => (
+          <div key={p.slug} className="flex flex-col gap-2">
           <EntityCard
-            key={p.slug}
             to="/knihy/$slug"
             params={{ slug: p.slug }}
             image={p.image}
@@ -46,6 +48,8 @@ function Books() {
             text={p.summary}
             className="border-primary/20"
           />
+          {audiobooks[p.slug] ? <OfflineDownloadButton bookId={p.slug} /> : null}
+          </div>
         ))}
       </div>
     </Page>
