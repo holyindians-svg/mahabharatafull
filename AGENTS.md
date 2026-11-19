@@ -20,3 +20,4 @@
 - MP3 listening analytics use one tracker per mounted recording and native audio events; exclude seeks, pauses and buffering from elapsed listening, so reader views cannot duplicate events.
 - External listening dashboard reports use the existing mounted AudioPlayer events and listening-sync module; resolve device identity lazily in the browser to preserve SSR and avoid duplicate reporting from immersive views.
 - Entity cross-references (src/lib/occurrences.ts) search the canonical cue/book-text loaders and deep-link to /knihy-ke-cteni via search params; never index copied text, so new books appear automatically.
+- All Google Analytics events go through sendEvent in src/lib/offline-events.ts, which queues them in localStorage while offline and flushes on reconnect, so offline reading/listening is not lost.

@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppShell } from "@/components/AppShell";
 import { startTextSync } from "@/lib/text-store";
 import { registerPwa } from "@/lib/pwa-register";
+import { startOfflineQueue } from "@/lib/offline-events";
 import { initAnalytics, trackPageView, validId } from "@/lib/analytics";
 import { getAnalyticsId } from "@/lib/analytics.functions";
 
@@ -151,6 +152,7 @@ function RootComponent() {
       const id = validId(await getAnalyticsId().catch(() => null)) ?? fallback;
       if (!id || cancelled) return;
       initAnalytics(id);
+      startOfflineQueue();
       trackPageView(window.location.pathname);
       unsub = router.subscribe("onResolved", (e) => {
         if (e.pathChanged) trackPageView(e.toLocation.pathname);

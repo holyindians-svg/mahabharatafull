@@ -1,13 +1,11 @@
-import type {} from "./analytics";
+import { sendEvent } from "./offline-events";
 
 type AudioEvent = "audio_play" | "audio_progress" | "audio_complete";
 type AudioParameters = { audio_title: string; minutes_played?: number };
 type Emit = (event: AudioEvent, parameters: AudioParameters) => void;
 
 function emitToGoogle(event: AudioEvent, parameters: AudioParameters) {
-  if (typeof window !== "undefined" && typeof window.gtag === "function") {
-    window.gtag("event", event, parameters);
-  }
+  sendEvent(event, parameters);
 }
 
 /** One tracker per mounted recording; seeks never count as listening time. */
