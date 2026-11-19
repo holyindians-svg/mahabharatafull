@@ -305,8 +305,8 @@ function BookDetail() {
               onTimeSection={audioBook ? (i) => setPlayingSection(i) : undefined}
               onTime={audioBook?.cuesUrl ? setAudioTime : undefined}
               onPlaybackState={audioBook ? setPlayback : undefined}
+              headerAction={audioBook ? <OfflineDownloadButton bookId={parva.slug} compact /> : undefined}
             />
-            {audioBook ? <OfflineDownloadButton bookId={parva.slug} /> : null}
             {audioBook?.cuesUrl && readerChapter ? (
               <>
                 <Button variant="outline" className="press min-h-11 w-full" onClick={expandReader}>

@@ -7,6 +7,8 @@ import { astras } from "@/data/astras";
 import { EntityCard } from "@/components/EntityCard";
 import { Chip, Page, Section } from "@/components/Bits";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { OfflineDownloadButton } from "@/components/OfflineDownloadButton";
+import { audiobooks } from "@/data/audiobooks";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -143,8 +145,8 @@ function Home() {
         <Section title="Kde začít">
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[parvas[0]!, parvas[5]!, parvas[7]!].map((p) => (
+              <div key={p.slug} className="space-y-2">
               <EntityCard
-                key={p.slug}
                 to="/knihy/$slug"
                 params={{ slug: p.slug }}
                 image={p.image}
@@ -153,6 +155,8 @@ function Home() {
                 sanskrit={p.sanskrit}
                 text={p.subtitle}
               />
+              {audiobooks[p.slug] ? <OfflineDownloadButton bookId={p.slug} /> : null}
+              </div>
             ))}
           </div>
         </Section>

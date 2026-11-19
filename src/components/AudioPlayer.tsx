@@ -43,6 +43,8 @@ interface AudioPlayerProps {
   /** Odhadovaná délka nahrávky v minutách. */
   minutes?: number;
   className?: string;
+  /** Optional control shown at the right of the "Audiokniha" header row. */
+  headerAction?: React.ReactNode;
   /** Kontext položky (postava / kniha / zbraň) pro dotaz do textu. */
   context?: string | undefined;
   /** Dotaz odeslaný do textu po kliknutí na již existující položku na stránce. */
@@ -127,6 +129,7 @@ export function AudioPlayer({
   subtitle,
   minutes,
   className,
+  headerAction,
   context,
   question,
   presetText,
@@ -875,9 +878,12 @@ export function AudioPlayer({
         className,
       )}
     >
-      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-primary">
-        <Headphones className="size-4" />
-        Audiokniha
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-primary">
+          <Headphones className="size-4" />
+          Audiokniha
+        </div>
+        {headerAction}
       </div>
 
       <div className="mt-3 flex items-start justify-between gap-4">
