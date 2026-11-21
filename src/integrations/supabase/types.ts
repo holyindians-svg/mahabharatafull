@@ -24,6 +24,8 @@ export type Database = {
           keywords: string[]
           short_summary: string
           slug: string
+          sort_order: number
+          srt_url: string | null
           title: string
         }
         Insert: {
@@ -35,6 +37,8 @@ export type Database = {
           keywords?: string[]
           short_summary?: string
           slug: string
+          sort_order?: number
+          srt_url?: string | null
           title: string
         }
         Update: {
@@ -46,6 +50,8 @@ export type Database = {
           keywords?: string[]
           short_summary?: string
           slug?: string
+          sort_order?: number
+          srt_url?: string | null
           title?: string
         }
         Relationships: []
