@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Insight subtitles are public" ON storage.objects;

@@ -15,6 +15,13 @@
       "when": 1795299224631,
       "tag": "0001_insights_srt_sort",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795299807694,
+      "tag": "0002_drop_unused_insights_storage_policy",
+      "breakpoints": true
     }
   ]
 }
