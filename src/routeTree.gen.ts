@@ -22,6 +22,8 @@ import { Route as KnihyIndexRouteImport } from './routes/knihy/index'
 import { Route as KnihySlugRouteImport } from './routes/knihy/$slug'
 import { Route as PostavyIndexRouteImport } from './routes/postavy/index'
 import { Route as PostavySlugRouteImport } from './routes/postavy/$slug'
+import { Route as ZajimavostiIndexRouteImport } from './routes/zajimavosti/index'
+import { Route as ZajimavostiSlugRouteImport } from './routes/zajimavosti/$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +90,16 @@ const PostavySlugRoute = PostavySlugRouteImport.update({
   path: '/postavy/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ZajimavostiIndexRoute = ZajimavostiIndexRouteImport.update({
+  id: '/zajimavosti/',
+  path: '/zajimavosti/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZajimavostiSlugRoute = ZajimavostiSlugRouteImport.update({
+  id: '/zajimavosti/$slug',
+  path: '/zajimavosti/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -100,9 +112,11 @@ export interface FileRoutesByFullPath {
   '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
+  '/zajimavosti/$slug': typeof ZajimavostiSlugRoute
   '/astry/': typeof AstryIndexRoute
   '/knihy/': typeof KnihyIndexRoute
   '/postavy/': typeof PostavyIndexRoute
+  '/zajimavosti/': typeof ZajimavostiIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,9 +129,11 @@ export interface FileRoutesByTo {
   '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
+  '/zajimavosti/$slug': typeof ZajimavostiSlugRoute
   '/astry': typeof AstryIndexRoute
   '/knihy': typeof KnihyIndexRoute
   '/postavy': typeof PostavyIndexRoute
+  '/zajimavosti': typeof ZajimavostiIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -131,9 +147,11 @@ export interface FileRoutesById {
   '/astry/$slug': typeof AstrySlugRoute
   '/knihy/$slug': typeof KnihySlugRoute
   '/postavy/$slug': typeof PostavySlugRoute
+  '/zajimavosti/$slug': typeof ZajimavostiSlugRoute
   '/astry/': typeof AstryIndexRoute
   '/knihy/': typeof KnihyIndexRoute
   '/postavy/': typeof PostavyIndexRoute
+  '/zajimavosti/': typeof ZajimavostiIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,9 +166,11 @@ export interface FileRouteTypes {
     | '/astry/$slug'
     | '/knihy/$slug'
     | '/postavy/$slug'
+    | '/zajimavosti/$slug'
     | '/astry/'
     | '/knihy/'
     | '/postavy/'
+    | '/zajimavosti/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -163,9 +183,11 @@ export interface FileRouteTypes {
     | '/astry/$slug'
     | '/knihy/$slug'
     | '/postavy/$slug'
+    | '/zajimavosti/$slug'
     | '/astry'
     | '/knihy'
     | '/postavy'
+    | '/zajimavosti'
   id:
     | '__root__'
     | '/'
@@ -178,9 +200,11 @@ export interface FileRouteTypes {
     | '/astry/$slug'
     | '/knihy/$slug'
     | '/postavy/$slug'
+    | '/zajimavosti/$slug'
     | '/astry/'
     | '/knihy/'
     | '/postavy/'
+    | '/zajimavosti/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -194,9 +218,11 @@ export interface RootRouteChildren {
   AstrySlugRoute: typeof AstrySlugRoute
   KnihySlugRoute: typeof KnihySlugRoute
   PostavySlugRoute: typeof PostavySlugRoute
+  ZajimavostiSlugRoute: typeof ZajimavostiSlugRoute
   AstryIndexRoute: typeof AstryIndexRoute
   KnihyIndexRoute: typeof KnihyIndexRoute
   PostavyIndexRoute: typeof PostavyIndexRoute
+  ZajimavostiIndexRoute: typeof ZajimavostiIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +318,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostavySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/zajimavosti/': {
+      id: '/zajimavosti/'
+      path: '/zajimavosti'
+      fullPath: '/zajimavosti/'
+      preLoaderRoute: typeof ZajimavostiIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zajimavosti/$slug': {
+      id: '/zajimavosti/$slug'
+      path: '/zajimavosti/$slug'
+      fullPath: '/zajimavosti/$slug'
+      preLoaderRoute: typeof ZajimavostiSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -306,9 +346,11 @@ const rootRouteChildren: RootRouteChildren = {
   AstrySlugRoute: AstrySlugRoute,
   KnihySlugRoute: KnihySlugRoute,
   PostavySlugRoute: PostavySlugRoute,
+  ZajimavostiSlugRoute: ZajimavostiSlugRoute,
   AstryIndexRoute: AstryIndexRoute,
   KnihyIndexRoute: KnihyIndexRoute,
   PostavyIndexRoute: PostavyIndexRoute,
+  ZajimavostiIndexRoute: ZajimavostiIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

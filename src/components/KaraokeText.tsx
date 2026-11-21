@@ -4,6 +4,9 @@ import { activeCueIndex } from "@/lib/reader-time";
 import { loadCues, type Cue } from "@/data/audiobooks";
 import { cn } from "@/lib/utils";
 import { EntityText } from "@/components/EntityText";
+import { InsightParts } from "@/components/InsightLinks";
+import { useInsightMatcher } from "@/lib/insights";
+import { splitInsights } from "@/lib/insight-match";
 
 interface Props {
   cuesUrl: string;
@@ -18,6 +21,7 @@ interface Props {
 /** Both readers share the same timed source; only typography and framing differ. */
 export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek, entity }: Props) {
   const [cues, setCues] = useState<Cue[] | null>(null);
+  const matcher = useInsightMatcher();
   const [failed, setFailed] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const manualUntil = useRef(0);
@@ -89,7 +93,7 @@ export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek, 
         {failed ? <p role="alert" className="text-muted-foreground">Text oddílu se nepodařilo načíst.</p>
           : !cues ? <p role="status" className="text-muted-foreground">Načítám text…</p>
           : !cues.length ? <p className="text-muted-foreground">Text oddílu není dostupný.</p>
-          : paragraphs.map((paragraph, index) => <p key={index}>
+          : paragraphs.map((paragraph, index) => { const used = new Set<string>(); return <p key={index}>
             {paragraph.map(({ cue, index: cueIndex }) => (
               <span key={cueIndex} role="button" tabIndex={0} data-cue={cueIndex}
                 aria-current={cueIndex === active ? "true" : undefined}
@@ -97,9 +101,9 @@ export function KaraokeText({ cuesUrl, number, time, immersive = false, onSeek, 
                 onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSeek(cue[0]); } }}
                 className={cn("cursor-pointer rounded px-0.5 transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   cueIndex === active ? "bg-primary/20 font-semibold text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >{cueIndex === active ? <EntityText text={cue[2]} name={entity} /> : cue[2]}{" "}</span>
+              >{cueIndex === active && entity ? <EntityText text={cue[2]} name={entity} /> : <InsightParts parts={splitInsights(cue[2], matcher, used)} />}{" "}</span>
             ))}
-          </p>)}
+          </p>; })}
       </div>
     </div>
   );

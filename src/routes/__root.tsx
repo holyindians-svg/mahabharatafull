@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppShell } from "@/components/AppShell";
+import { InsightProvider } from "@/components/InsightLinks";
 import { startTextSync } from "@/lib/text-store";
 import { registerPwa } from "@/lib/pwa-register";
 import { startOfflineQueue } from "@/lib/offline-events";
@@ -166,10 +167,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppShell>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-      </AppShell>
+      <InsightProvider>
+        <AppShell>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </AppShell>
+      </InsightProvider>
     </QueryClientProvider>
   );
 }

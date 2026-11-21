@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { audiobookFor, loadCues, type Cue } from "@/data/audiobooks";
 import { activeCueIndex } from "@/lib/reader-time";
 import { EntityText } from "@/components/EntityText";
+import { InsightText } from "@/components/InsightLinks";
 import { ReaderAudioBar } from "@/components/ReaderAudioBar";
 import { BookOpenText, X } from "lucide-react";
 import { Page, PageHeader } from "@/components/Bits";
@@ -307,7 +308,7 @@ function ReadingBooksPage() {
               {openSection.paragraphs.map((paragraph, index) => (
                 <p key={`${openSection.section.fromSegment}-${index}`} data-reading-paragraph={index}
                   className={cn("relative -mx-3 rounded-md px-3 transition-colors duration-700 motion-reduce:transition-none", flash === index && "lotus-frame")}>
-                  {flash === index ? <EntityText text={paragraph} name={search.hledat} /> : paragraph}
+                  {flash === index ? <EntityText text={paragraph} name={search.hledat} /> : <InsightText text={paragraph} />}
                 </p>
               ))}
             </div>

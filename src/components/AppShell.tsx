@@ -45,6 +45,7 @@ const nav = [
     icon: Swords,
     badge: String(astras.length),
   },
+  { to: "/zajimavosti", label: "Zajímavosti a pochopení", sanskrit: "Vyākhyā", icon: Sparkles, badge: null },
   { to: "/hledat", label: "Hledat v textech", sanskrit: "Anveṣaṇa", icon: Search, badge: null },
   { to: "/nastaveni-hlasu", label: "Nastavení hlasu", sanskrit: "Svara", icon: Settings, badge: null },
 ];
