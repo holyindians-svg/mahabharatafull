@@ -23,3 +23,4 @@
 - All Google Analytics events go through sendEvent in src/lib/offline-events.ts, which queues them in localStorage while offline and flushes on reconnect, so offline reading/listening is not lost.
 - Offline MP3 audiobooks are stored per book in Cache API (src/lib/offline-audio-store.ts, streamed via TransformStream to avoid loading GB files into memory); AudioPlayer swaps to the cached ObjectURL only while paused, so the synchronous iOS gesture path and seeks stay unchanged.
 - Contextual insight links take keywords only from the `insights` table via src/lib/insight-match.ts; build per-paragraph used-sets inside render (StrictMode-safe) and stop click propagation so cue seek never fires.
+- Insight articles come only from the `insights` table (ordered by sort_order); subtitles load from srt_url (parsed in browser by src/lib/srt.ts, legacy cues_url fallback) and offline downloads register via registerOfflineSource, so new rows need no code.

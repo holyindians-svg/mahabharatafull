@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
+import { Headphones, Sparkles } from "lucide-react";
 import { Page, PageHeader } from "@/components/Bits";
 import { insightsQuery } from "@/lib/insights";
 
@@ -31,7 +31,14 @@ function InsightsList() {
             {data.map((i) => (
               <Link key={i.slug} to="/zajimavosti/$slug" params={{ slug: i.slug }}
                 className="press group rounded-2xl border border-amber-400/40 bg-surface/40 p-6 backdrop-blur-md transition-colors hover:border-amber-400">
-                <Sparkles className="size-5 text-primary" />
+                <div className="flex items-center justify-between">
+                  <Sparkles className="size-5 text-primary" />
+                  {i.audio_url ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 px-2 py-0.5 text-xs text-primary">
+                      <Headphones className="size-3.5" aria-hidden /> Audio
+                    </span>
+                  ) : null}
+                </div>
                 <h2 className="mt-3 font-display text-xl leading-snug text-foreground group-hover:text-primary">{i.title}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{i.short_summary}</p>
               </Link>

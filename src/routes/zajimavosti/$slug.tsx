@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft } from "lucide-react";
 import { Page } from "@/components/Bits";
 import { KaraokeText } from "@/components/KaraokeText";
 import { AudioPlayer, type AudioPlayerHandle } from "@/components/AudioPlayer";
-import { insightsQuery } from "@/lib/insights";
+import { insightCuesUrl, insightsQuery } from "@/lib/insights";
+import { OfflineDownloadButton } from "@/components/OfflineDownloadButton";
+import { registerOfflineSource } from "@/lib/offline-audio-store";
 
 export const Route = createFileRoute("/zajimavosti/$slug")({
   head: () => ({
@@ -28,6 +30,13 @@ function InsightDetail() {
   const insight = data?.find((i) => i.slug === slug);
   const player = useRef<AudioPlayerHandle | null>(null);
   const [time, setTime] = useState(0);
+  const cuesUrl = insight ? insightCuesUrl(insight) : null;
+  const offlineId = insight ? `insight:${insight.slug}` : "";
+  useEffect(() => {
+    if (insight?.audio_url) registerOfflineSource(offlineId, insight.audio_url, cuesUrl ? [cuesUrl] : []);
+  }, [insight?.audio_url, cuesUrl, offlineId]);
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   return (
     <Page>
       <Link to="/zajimavosti" className="press inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-primary">
@@ -44,14 +53,17 @@ function InsightDetail() {
               <div className="mb-8">
                 <AudioPlayer title={insight.title} subtitle="Zajímavosti a pochopení" audioUrl={insight.audio_url}
                   progressKey={`insight:${insight.slug}`} controlRef={player} onTime={setTime} />
-                {insight.cues_url ? (
+                {ready ? <OfflineDownloadButton bookId={offlineId} className="mt-3" /> : null}
+                {cuesUrl ? (
                   <div className="text-sand">
-                    <KaraokeText cuesUrl={insight.cues_url} number={0} time={time} onSeek={(t) => player.current?.seek(t)} />
+                    <KaraokeText cuesUrl={cuesUrl} number={0} time={time} onSeek={(t) => player.current?.seek(t)} />
                   </div>
                 ) : null}
               </div>
             ) : null}
-            <div className="insight-prose text-[1.0625rem] leading-8"><ReactMarkdown>{insight.content}</ReactMarkdown></div>
+            {insight.audio_url && cuesUrl ? null : (
+              <div className="insight-prose text-[1.0625rem] leading-8"><ReactMarkdown>{insight.content}</ReactMarkdown></div>
+            )}
           </article>
         )}
     </Page>

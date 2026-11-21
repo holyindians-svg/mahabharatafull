@@ -36,9 +36,18 @@ const cueCache = new Map<string, Promise<Map<number, Cue[]>>>();
 export function loadCues(url: string): Promise<Map<number, Cue[]>> {
   let p = cueCache.get(url);
   if (!p) {
-    p = fetch(url)
-      .then((r) => r.json() as Promise<{ sections: { n: number; cues: Cue[] }[] }>)
-      .then((d) => new Map(d.sections.map((s) => [s.n, s.cues])));
+    p = (async () => {
+      let res: Response | undefined;
+      if (typeof caches !== "undefined") res = await caches.match(url).catch(() => undefined);
+      res ??= await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (/\.srt(\?|$)/i.test(url)) {
+        const { parseSrt } = await import("@/lib/srt");
+        return new Map<number, Cue[]>([[0, parseSrt(await res.text())]]);
+      }
+      const d = (await res.json()) as { sections: { n: number; cues: Cue[] }[] };
+      return new Map(d.sections.map((s) => [s.n, s.cues]));
+    })();
     p.catch(() => cueCache.delete(url));
     cueCache.set(url, p);
   }

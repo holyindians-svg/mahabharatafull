@@ -17,7 +17,22 @@ export type OfflineState = Record<string, OfflineEntry>;
 
 const MB = 1024 * 1024;
 const toMb = (b: number) => Math.round((b / MB) * 10) / 10;
-const urlFor = (bookId: string) => audiobooks[bookId]?.audioUrl;
+const extraSources = new Map<string, { audioUrl: string; extras: string[] }>();
+const urlFor = (bookId: string) => audiobooks[bookId]?.audioUrl ?? extraSources.get(bookId)?.audioUrl;
+const extrasFor = (bookId: string) => extraSources.get(bookId)?.extras ?? [];
+const allIds = () => [...Object.keys(audiobooks), ...extraSources.keys()];
+export const hasOfflineSource = (bookId: string) => !!urlFor(bookId);
+/** Registers a non-book recording (e.g. an insight article) plus its companion files (subtitles). */
+export function registerOfflineSource(id: string, audioUrl: string, extras: string[] = []) {
+  const prev = extraSources.get(id);
+  if (prev && prev.audioUrl === audioUrl && prev.extras.join() === extras.join()) return;
+  extraSources.set(id, { audioUrl, extras });
+  if (!hasCache()) return;
+  void caches.open(OFFLINE_AUDIO_CACHE).then(async (cache) => {
+    const res = await cache.match(audioUrl);
+    if (res) set(id, { status: "downloaded", progress: 100, sizeMb: toMb(Number(res.headers.get("x-size") ?? 0)) });
+  }).catch(() => {});
+}
 const empty: OfflineEntry = { status: "not_downloaded", progress: 0, sizeMb: 0 };
 
 let state: OfflineState = {};
@@ -84,9 +99,15 @@ export async function downloadOfflineAudio(bookId: string) {
         headers: { "content-type": res.headers.get("content-type") ?? "audio/mpeg", "x-size": String(total || received) },
       }),
     );
+    for (const extra of extrasFor(bookId)) {
+      const r = await fetch(extra, { signal: ctrl.signal });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      await cache.put(extra, r);
+    }
     set(bookId, { status: "downloaded", progress: 100, sizeMb: toMb(total || received) });
   } catch (e) {
     await cache.delete(url).catch(() => false);
+    for (const extra of extrasFor(bookId)) await cache.delete(extra).catch(() => false);
     if (ctrl.signal.aborted) set(bookId, { ...empty });
     else set(bookId, { status: "error", progress: 0, error: isQuota(e) ? QUOTA_MESSAGE : GENERIC_MESSAGE });
   } finally {
@@ -101,7 +122,11 @@ export function cancelOfflineDownload(bookId: string) {
 export async function removeOfflineAudio(bookId: string) {
   cancelOfflineDownload(bookId);
   const url = urlFor(bookId);
-  if (url && hasCache()) await (await caches.open(OFFLINE_AUDIO_CACHE)).delete(url);
+  if (url && hasCache()) {
+    const cache = await caches.open(OFFLINE_AUDIO_CACHE);
+    await cache.delete(url);
+    for (const extra of extrasFor(bookId)) await cache.delete(extra);
+  }
   const obj = objectUrls.get(bookId);
   if (obj) URL.revokeObjectURL(obj);
   objectUrls.delete(bookId);
@@ -119,7 +144,7 @@ export async function clearAllOfflineAudio() {
 /** ObjectURL stažené nahrávky, nebo null (pak se streamuje online). */
 export async function getOfflineAudioUrl(audioUrl: string): Promise<string | null> {
   if (!hasCache()) return null;
-  const bookId = Object.keys(audiobooks).find((id) => urlFor(id) === audioUrl);
+  const bookId = allIds().find((id) => urlFor(id) === audioUrl);
   if (!bookId) return null;
   const cached = objectUrls.get(bookId);
   if (cached) return cached;

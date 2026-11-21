@@ -1,7 +1,6 @@
 import { Check, CloudDownload, Loader2, AlertTriangle } from "lucide-react";
 import { useOfflineAudio } from "@/hooks/use-offline-audio";
-import { cancelOfflineDownload, downloadOfflineAudio, entryFor, removeOfflineAudio } from "@/lib/offline-audio-store";
-import { audiobooks } from "@/data/audiobooks";
+import { cancelOfflineDownload, downloadOfflineAudio, entryFor, hasOfflineSource, removeOfflineAudio } from "@/lib/offline-audio-store";
 import { cn } from "@/lib/utils";
 import type React from "react";
 
@@ -9,7 +8,7 @@ const fmtMb = (mb: number) => `${mb.toLocaleString("cs-CZ", { maximumFractionDig
 
 export function OfflineDownloadButton({ bookId, className, compact }: { bookId: string; className?: string; compact?: boolean }) {
   const state = useOfflineAudio();
-  if (!audiobooks[bookId]) return null;
+  if (!hasOfflineSource(bookId)) return null;
   const e = state[bookId] ?? entryFor(bookId);
 
   const onClick = (ev: React.MouseEvent) => {
